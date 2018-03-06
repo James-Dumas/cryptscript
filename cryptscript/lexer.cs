@@ -27,6 +27,7 @@ namespace Cryptscript
     {
         public static Dictionary<string, string> TOKENS = new Dictionary<string, string>()
         {
+            {" *#![a-zA-Z0-9]+$", "WALLET"},
             {" *\"[^\"]*\"", "STRING"},
             {" *'[^']*'", "STRING"},
             {@" *\+", "ADD"},
@@ -45,6 +46,10 @@ namespace Cryptscript
             {" +not +", "NOT"},
             {" *==", "EQUAL"},
             {" *!=", "INEQUAL"},
+            {" *>", "GREATER"},
+            {" *<", "LESS"},
+            {" *>=", "GREATEREQ"},
+            {" *<=", "LESSEQ"},
             {" *=", "SET"},
             {@" *\(", "LPAREN"},
             {@" *\)", "RPAREN"},
@@ -54,7 +59,7 @@ namespace Cryptscript
             {@" *\}", "RCURLY"},
             {" *,", "COMMA"},
             {" *~[^#]*", "COMMENT"},
-            {" *#.+$", "BUFFER"},
+            {" *#[a-zA-Z0-9]+$", "BUFFER"},
             {" *if", "IF"},
             {" *then", "THEN"},
             {" *else", "ELSE"},
@@ -77,15 +82,19 @@ namespace Cryptscript
         public List<Token> tokenize()
         {
             List<Token> tokens = new List<Token>();
+            Token errorToken = new Token("ERROR", "SyntaxError");
             int start = 0;
             while(start < this.text.Length)
             {
-                Token newToken = new Token("ERROR", "SyntaxError");
+                Token newToken = new Token("", "");
                 bool match = false;
+                bool error = false;
                 int end = this.text.Length;
-                while(!match && end > start)
+                while(!match && !error)
                 {
+                    // try to match every token's regex to a substring of the text that is decreasing in length
                     string subStr = this.text.Substring(start, end - start);
+                    error = end <= start;
                     foreach(KeyValuePair<string, string> item in TOKENS)
                     {
                         string tokenStr = Regex.Match(subStr, item.Key).Value;
@@ -101,10 +110,14 @@ namespace Cryptscript
                     end--;
                 }
 
-                tokens.Add(newToken);
-                if(newToken.type == "ERROR")
+                if(error)
                 {
+                    tokens.Add(errorToken);
                     break;
+                }
+                else
+                {
+                    tokens.Add(newToken);
                 }
             }
 
