@@ -1,0 +1,7 @@
+#visual studio stuff
+.vs/
+.vscode/
+
+#dotnet stuff
+[Oo]bj/
+[Bb]in/
