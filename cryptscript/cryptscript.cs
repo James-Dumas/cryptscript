@@ -8,12 +8,12 @@ namespace CryptScript
         {
             Console.WriteLine("Type 'exit' to quit.");
 
-            while(true)
+            while (true)
             {
                 Console.Write(">> ");
 
                 string input = Console.ReadLine().Trim();
-                if(input == "exit")
+                if (input == "exit")
                 {
                     break;
                 }
@@ -21,7 +21,7 @@ namespace CryptScript
                 Lexer lexer = new Lexer(input);
 
                 string output = "";
-                foreach(Token token in lexer.Tokenize())
+                foreach (Token token in lexer.Tokenize())
                 {
                     output += token.ToString() + " ";
                 }

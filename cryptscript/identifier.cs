@@ -6,7 +6,7 @@ namespace CryptScript
     {
         public string Name { get; set; }
         public Token Reference { get; set; }
-        
+
         public Identifier(string name)
         {
             Name = name;

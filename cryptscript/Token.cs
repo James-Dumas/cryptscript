@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 
 namespace CryptScript
 {
@@ -13,7 +13,7 @@ namespace CryptScript
             Value = value.Trim();
 
             // Remove quotes around strings
-            if(type == TokenType.String)
+            if (type == TokenType.String)
             {
                 Value = Value.Substring(1, Value.Length - 2);
             }
@@ -35,7 +35,9 @@ namespace CryptScript
         private static TokenType ResultType(Token x, Token y) =>
             x.Type == TokenType.Decimal || y.Type == TokenType.Decimal
                 ? TokenType.Decimal
-                : TokenType.Integer;
+                : x.Type == TokenType.String || y.Type == TokenType.String
+                    ? TokenType.String
+                    : TokenType.Integer;
 
         /// <summary>
         /// Performs an operation on two tokens
@@ -53,7 +55,7 @@ namespace CryptScript
 
             // Perform the operation
             string ReturnString = "";
-            switch(operation)
+            switch (operation)
             {
                 case OperationType.Addition:
                     ReturnString = Convert.ToString(
@@ -98,12 +100,15 @@ namespace CryptScript
             return new Token(ReturnType, ReturnString);
         }
 
-        #endregion
+        #endregion Internal Utility Methods
 
         #region Operator Overloads
 
         public static Token operator +(Token x, Token y) =>
-            Operation(OperationType.Addition, x, y);
+            Operation(ResultType(x, y) == TokenType.String
+                          ? OperationType.Concatenation
+                          : OperationType.Addition,
+                x, y);
 
         public static Token operator -(Token x, Token y) =>
             Operation(OperationType.Subraction, x, y);
@@ -114,7 +119,7 @@ namespace CryptScript
         public static Token operator /(Token x, Token y) =>
             Operation(OperationType.Division, x, y);
 
-        #endregion
+        #endregion Operator Overloads
     }
 
     /// <summary>
@@ -177,5 +182,4 @@ namespace CryptScript
         Division,
         Concatenation
     }
-
 }
