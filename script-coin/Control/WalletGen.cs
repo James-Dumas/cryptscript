@@ -1,8 +1,8 @@
-﻿using System;
+using System;
 using System.Security.Cryptography;
 using System.Text;
 
-namespace scriptcoin
+namespace ScriptCoin
 {
     public class WalletGen
     {
@@ -16,7 +16,7 @@ namespace scriptcoin
             string privKey = string.Empty;
             string pubKey = string.Empty;
             string checkSum = string.Empty;
-            
+
             byte[] privData = new byte[512];
             byte[] pubData = new byte[512];
             byte[] tempData = new byte[512];
@@ -24,7 +24,7 @@ namespace scriptcoin
 
             SHA256 sHA256 = new SHA256Managed();
             SHA512 sha512 = new SHA512Managed();
-             
+
             //Generates seed1 and seed 1, then combines them into 64 bit string
             for (int i = 0; i < 32; i++)
             {

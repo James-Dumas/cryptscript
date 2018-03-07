@@ -1,12 +1,12 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Security.Cryptography;
 
-namespace scriptcoin
+namespace ScriptCoin
 {
     public class UserInterface
     {
-        static void Main()
+        static void Run()
         {
             Initialize:
             Console.ForegroundColor = ConsoleColor.Cyan;
@@ -50,7 +50,7 @@ namespace scriptcoin
             {
                 Console.WriteLine("Unknown command, use `help` for more information");
             }
-            
+
             goto Initialize;
         }
 
