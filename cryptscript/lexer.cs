@@ -1,28 +1,9 @@
-using System;
-using System.Text.RegularExpressions;
-using System.Collections;
 using System.Collections.Generic;
-using System.Collections.Specialized;
 
-namespace Cryptscript
+using Cryptscript;
+
+namespace CryptscriptLexer
 {
-    public class Token
-    {
-        public string type;
-        public string value;
-
-        public Token(string type, string value)
-        {
-            this.type = type;
-            this.value = value.Trim();
-        }
-
-        public string Repr()
-        {
-            return String.Format("({0}, '{1}')", this.type, this.value);
-        }
-    }
-
     public class Lexer
     {
         public static Dictionary<string, string> TOKENS = new Dictionary<string, string>()
@@ -37,13 +18,13 @@ namespace Cryptscript
             {" *%", "MOD"},
             {@" *\^", "EXP"},
             {" *&&", "AND"},
-            {" +and +", "AND"},
+            {" +(?i)(and) +", "AND"},
             {@" *\|\|", "OR"},
-            {" +or +", "OR"},
+            {" +(?i)(or) +", "OR"},
             {@" *\|\|>", "XOR"},
-            {" +xor +", "XOR"},
+            {" +(?i)(xor) +", "XOR"},
             {" *!", "NOT"},
-            {" +not +", "NOT"},
+            {" +(?i)(not) +", "NOT"},
             {" *==", "EQUAL"},
             {" *!=", "INEQUAL"},
             {" *>", "GREATER"},
@@ -60,13 +41,15 @@ namespace Cryptscript
             {" *,", "COMMA"},
             {" *~[^#]*", "COMMENT"},
             {" *#[a-zA-Z0-9]+$", "BUFFER"},
-            {" *if", "IF"},
-            {" *then", "THEN"},
-            {" *else", "ELSE"},
-            {" *while", "WHILE"},
-            {" *for", "FOR"},
-            {" *do", "DO"},
-            {" *end", "END"},
+            {" *(?i)(if)", "IF"},
+            {" *(?i)(then)", "THEN"},
+            {" *(?i)(else)", "ELSE"},
+            {" *(?i)(while)", "WHILE"},
+            {" *(?i)(for)", "FOR"},
+            {" *(?i)(do)", "DO"},
+            {" *(?i)(end)", "END"},
+            {" *(?i)(true)", "TRUE"},
+            {" *(?i)(false)", "FALSE"},
             {@" *\d*\.\d+", "DECIMAL"},
             {@" *\d+", "INTEGER"},
             {" *[A-Za-z][A-Za-z0-9_]*", "ID"},
@@ -79,6 +62,7 @@ namespace Cryptscript
             this.text = text.Trim();
         }
 
+        /// convert string of text into tokens
         public List<Token> tokenize()
         {
             List<Token> tokens = new List<Token>();
@@ -101,6 +85,7 @@ namespace Cryptscript
                         match = tokenStr == subStr;
                         if(match)
                         {
+                            // add a new token with the value found at the matched regex
                             newToken = new Token(item.Value, subStr);
                             start += subStr.Length;
                             break;
@@ -110,6 +95,7 @@ namespace Cryptscript
                     end--;
                 }
 
+                // return syntax error when text can't be tokenized
                 if(error)
                 {
                     tokens.Add(errorToken);
@@ -122,31 +108,6 @@ namespace Cryptscript
             }
 
 			return tokens;
-        }
-    }
-
-    public class Interpreter
-    {
-        public static void Main(String[] args)
-        {
-            Console.WriteLine("Type 'exit' to quit.");
-            while(true)
-            {
-                Console.Write(">> ");
-                string input = Console.ReadLine().Trim();
-                if(input == "exit")
-                {
-                    break;
-                }
-
-                Lexer lexer = new Lexer(input);
-                string output = "";
-                foreach(Token token in lexer.tokenize())
-                {
-                    output += token.Repr() + " ";
-                }
-                Console.WriteLine(output);
-            }
         }
     }
 }
