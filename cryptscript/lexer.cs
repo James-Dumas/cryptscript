@@ -1,93 +1,95 @@
 using System.Collections.Generic;
+using System.Text.RegularExpressions;
 
-using Cryptscript;
-
-namespace CryptscriptLexer
+namespace CryptScript
 {
     public class Lexer
     {
-        public static Dictionary<string, string> TOKENS = new Dictionary<string, string>()
+        public static Dictionary<string, TokenType> Tokens = new Dictionary<string, TokenType>()
         {
-            {" *#![a-zA-Z0-9]+$", "WALLET"},
-            {" *\"[^\"]*\"", "STRING"},
-            {" *'[^']*'", "STRING"},
-            {@" *\+", "ADD"},
-            {" *-", "SUB"},
-            {@" *\*", "MULT"},
-            {" */", "DIV"},
-            {" *%", "MOD"},
-            {@" *\^", "EXP"},
-            {" *&&", "AND"},
-            {" +(?i)(and) +", "AND"},
-            {@" *\|\|", "OR"},
-            {" +(?i)(or) +", "OR"},
-            {@" *\|\|>", "XOR"},
-            {" +(?i)(xor) +", "XOR"},
-            {" *!", "NOT"},
-            {" +(?i)(not) +", "NOT"},
-            {" *==", "EQUAL"},
-            {" *!=", "INEQUAL"},
-            {" *>", "GREATER"},
-            {" *<", "LESS"},
-            {" *>=", "GREATEREQ"},
-            {" *<=", "LESSEQ"},
-            {" *=", "SET"},
-            {@" *\(", "LPAREN"},
-            {@" *\)", "RPAREN"},
-            {@" *\[", "LBRACK"},
-            {@" *\]", "RBRACK"},
-            {@" *\{", "LCURLY"},
-            {@" *\}", "RCURLY"},
-            {" *,", "COMMA"},
-            {" *~[^#]*", "COMMENT"},
-            {" *#[a-zA-Z0-9]+$", "BUFFER"},
-            {" *(?i)(if)", "IF"},
-            {" *(?i)(then)", "THEN"},
-            {" *(?i)(else)", "ELSE"},
-            {" *(?i)(while)", "WHILE"},
-            {" *(?i)(for)", "FOR"},
-            {" *(?i)(do)", "DO"},
-            {" *(?i)(end)", "END"},
-            {" *(?i)(true)", "TRUE"},
-            {" *(?i)(false)", "FALSE"},
-            {@" *\d*\.\d+", "DECIMAL"},
-            {@" *\d+", "INTEGER"},
-            {" *[A-Za-z][A-Za-z0-9_]*", "ID"},
+            { " *#![a-zA-Z0-9]+$",          TokenType.Wallet },
+            { " *\"[^\"]*\"",               TokenType.String },
+            { " *'[^']*'",                  TokenType.String },
+            { @" *\+",                      TokenType.Addition },
+            { " *-",                        TokenType.Subraction },
+            { @" *\*",                      TokenType.Multiplication },
+            { " */",                        TokenType.Division },
+            { " *%",                        TokenType.Modulo },
+            { @" *\^",                      TokenType.Exponent },
+            { " *&&",                       TokenType.AND },
+            { " +(?i)(and) +",              TokenType.AND },
+            { @" *\|\|",                    TokenType.OR },
+            { " +(?i)(or) +",               TokenType.OR },
+            { @" *\|\|>",                   TokenType.XOR },
+            { " +(?i)(xor) +",              TokenType.XOR },
+            { " *!",                        TokenType.NOT },
+            { " +(?i)(not) +",              TokenType.NOT },
+            { " *==",                       TokenType.Equal },
+            { " *!=",                       TokenType.Inequal },
+            { " *>",                        TokenType.Greater },
+            { " *<",                        TokenType.Less },
+            { " *>=",                       TokenType.GreaterEqual },
+            { " *<=",                       TokenType.LessEqual },
+            { " *=",                        TokenType.Set },
+            { @" *\(",                      TokenType.LeftParenthesis },
+            { @" *\)",                      TokenType.RightParenthesis },
+            { @" *\[",                      TokenType.LeftBracket },
+            { @" *\]",                      TokenType.RightBracket },
+            { @" *\{",                      TokenType.LeftCurly },
+            { @" *\}",                      TokenType.RightCurly },
+            { " *,",                        TokenType.Comma },
+            { " *~[^#]*",                   TokenType.Comment },
+            { " *#[a-zA-Z0-9]+$",           TokenType.Buffer },
+            { " *(?i)(if)",                 TokenType.If },
+            { " *(?i)(then)",               TokenType.Then },
+            { " *(?i)(else)",               TokenType.Else },
+            { " *(?i)(while)",              TokenType.While },
+            { " *(?i)(for)",                TokenType.For },
+            { " *(?i)(do)",                 TokenType.Do },
+            { " *(?i)(end)",                TokenType.End },
+            { " *(?i)(true)",               TokenType.True },
+            { " *(?i)(false)",              TokenType.False },
+            { @" *\d*\.\d+",                TokenType.Decimal },
+            { @" *\d+",                     TokenType.Integer },
+            { " *[A-Za-z][A-Za-z0-9_]*",    TokenType.ID },
         };
 
-        private string text;
+        private string Text;
 
         public Lexer(string text)
         {
-            this.text = text.Trim();
+            Text = text.Trim();
         }
 
         /// convert string of text into tokens
-        public List<Token> tokenize()
+        public List<Token> Tokenize()
         {
             List<Token> tokens = new List<Token>();
-            Token errorToken = new Token("ERROR", "SyntaxError");
-            int start = 0;
-            while(start < this.text.Length)
+            Token errorToken = new Token(TokenType.Error, "SyntaxError");
+
+            for(int i = 0; i < Text.Length;)
             {
-                Token newToken = new Token("", "");
+                Token newToken = new Token(TokenType.Blank, "");
                 bool match = false;
                 bool error = false;
-                int end = this.text.Length;
+                int end = Text.Length;
+
                 while(!match && !error)
                 {
                     // try to match every token's regex to a substring of the text that is decreasing in length
-                    string subStr = this.text.Substring(start, end - start);
-                    error = end <= start;
-                    foreach(KeyValuePair<string, string> item in TOKENS)
+                    string subStr = Text.Substring(i, end - i);
+                    error = end <= i;
+
+                    foreach(KeyValuePair<string, TokenType> item in Tokens)
                     {
                         string tokenStr = Regex.Match(subStr, item.Key).Value;
                         match = tokenStr == subStr;
+
                         if(match)
                         {
                             // add a new token with the value found at the matched regex
                             newToken = new Token(item.Value, subStr);
-                            start += subStr.Length;
+                            i += subStr.Length;
                             break;
                         }
                     }
