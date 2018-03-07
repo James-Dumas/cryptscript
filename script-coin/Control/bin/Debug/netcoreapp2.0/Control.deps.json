@@ -6,15 +6,15 @@
   "compilationOptions": {},
   "targets": {
     ".NETCoreApp,Version=v2.0": {
-      "control/1.0.0": {
+      "Control/1.0.0": {
         "runtime": {
-          "control.dll": {}
+          "Control.dll": {}
         }
       }
     }
   },
   "libraries": {
-    "control/1.0.0": {
+    "Control/1.0.0": {
       "type": "project",
       "serviceable": false,
       "sha512": ""
