@@ -7,11 +7,7 @@ namespace CryptScript
     {
         #region Public Fields
 
-        public string Text
-        {
-            get { return Text; }
-            set { Text = value.Trim(); }
-        }
+        public string Text { get; set; }
 
         public static Dictionary<string, TokenType> Tokens = new Dictionary<string, TokenType>()
         {
