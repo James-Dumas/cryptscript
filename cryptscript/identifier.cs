@@ -4,8 +4,8 @@ namespace CryptScript
 {
     public class Identifier
     {
-        public string Name { get; set; }
-        public Token Reference { get; set; }
+        public string Name;
+        public Token Reference;
 
         public Identifier(string name)
         {

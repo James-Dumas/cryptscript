@@ -7,7 +7,7 @@ namespace CryptScript
     {
         #region Public Fields
 
-        public string Text { get; set; }
+        public string Text;
 
         public static Dictionary<string, TokenType> Tokens = new Dictionary<string, TokenType>()
         {
@@ -47,12 +47,14 @@ namespace CryptScript
             { " *(?i)(if)",                 TokenType.If },
             { " *(?i)(then)",               TokenType.Then },
             { " *(?i)(else)",               TokenType.Else },
+            { " *(?i)(elif)",               TokenType.Elif },
             { " *(?i)(while)",              TokenType.While },
             { " *(?i)(for)",                TokenType.For },
             { " *(?i)(do)",                 TokenType.Do },
             { " *(?i)(end)",                TokenType.End },
-            { " *(?i)(true)",               TokenType.True },
-            { " *(?i)(false)",              TokenType.False },
+            { " *(?i)(zilch)",              TokenType.Zilch },
+            { " *(?i)(true)",               TokenType.Bool },
+            { " *(?i)(false)",              TokenType.Bool },
             { @" *\d*\.\d+",                TokenType.Decimal },
             { @" *\d+",                     TokenType.Integer },
             { " *[A-Za-z][A-Za-z0-9_]*",    TokenType.ID },
