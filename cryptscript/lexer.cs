@@ -7,9 +7,9 @@ namespace CryptScript
     {
         #region Public Fields
 
-        public string Text;
+        public string Text { get; set; }
 
-        public static Dictionary<string, TokenType> Tokens = new Dictionary<string, TokenType>()
+        public static Dictionary<string, TokenType> Tokens { get; } = new Dictionary<string, TokenType>()
         {
             { " *#![a-zA-Z0-9]+$",          TokenType.Wallet },
             { " *\"[^\"]*\"",               TokenType.String },

@@ -4,8 +4,8 @@ namespace CryptScript
 {
     public class Identifier
     {
-        public string Name;
-        public Token Reference;
+        public string Name { get; set; }
+        public Token Reference { get; set; }
 
         public Identifier(string name)
         {
@@ -15,7 +15,7 @@ namespace CryptScript
 
     public class IdentifierGroup
     {
-        private Dictionary<string, Identifier> IDs = new Dictionary<string, Identifier>();
+        private Dictionary<string, Identifier> IDs { get; set; } = new Dictionary<string, Identifier>();
 
         public void AddID(string name) =>
             IDs.Add(name, new Identifier(name));

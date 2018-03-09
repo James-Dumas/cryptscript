@@ -5,39 +5,35 @@ namespace CryptScript
 {
     public class Token
     {
-        public TokenType Type;
-        public string Value;
+        public TokenType Type { get; set; }
+        public string Value { get; set; }
 
         public Token(TokenType type, string value)
         {
             Type = type;
             Value = value.Trim();
 
-            // Remove quotes around strings
-            if(type == TokenType.String)
+            switch (type)
             {
-                Value = Value.Substring(1, Value.Length - 2);
-            }
+                case TokenType.String:
+                    Value = Value.Substring(1, Value.Length - 2);
+                    break;
 
-            // for int/double, convert to int/double then back to string, to remove unnecessary leading/trailing zeros
-            if(type == TokenType.Integer)
-            {
-                Value = Convert.ToString(Convert.ToInt32(Value));
-            }
+                case TokenType.Integer:
+                    Value = Convert.ToString(Convert.ToInt32(Value));
+                    break;
 
-            if(type == TokenType.Decimal)
-            {
-                Value = Convert.ToString(Convert.ToDouble(Value));
+                case TokenType.Decimal:
+                    Value = Convert.ToString(Convert.ToDouble(Value));
+                    break;
             }
         }
 
         /// <summary>
         /// Returns a formatted representation of the token
         /// </summary>
-        public override string ToString()
-        {
-            return String.Format("({0}, '{1}')", Type.ToString(), Value);
-        }
+        public override string ToString() =>
+            String.Format("({0}, '{1}')", Type.ToString(), Value);
 
         /// <summary>
         /// Performs an operation on 1-2 tokens
@@ -185,22 +181,17 @@ namespace CryptScript
                     ? TokenType.String
                     : TokenType.Integer;
 
-        private static double ToDouble(Token x)
-        {
-            return Convert.ToDouble(x.Value);
-        }
+        private static double ToDouble(Token x) =>
+            Convert.ToDouble(x.Value);
+        
 
-        private static int ToInt(Token x)
-        {
-            return Convert.ToInt32(x.Value);
-        }
+        private static int ToInt(Token x) =>
+            Convert.ToInt32(x.Value);
 
-        private static bool ToBool(Token x)
-        {
-            return x.Type == TokenType.Bool
+        private static bool ToBool(Token x) =>
+            x.Type == TokenType.Bool
                 ? x.Value.Substring(0, 1).ToLower() == "t"
                 : x.Type != TokenType.Zilch;
-        }
 
         private static bool Equal(Token x, Token y)
         {
