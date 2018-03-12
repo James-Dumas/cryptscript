@@ -1,13 +1,14 @@
-﻿using System;
+using System;
 using System.IO;
 
 namespace scriptcoin
 {
-    public class UserInterface
+    public class Program
     {
         public static void Main()
         {
-            string path = @"C:\Users\WollaMat\Documents\GitHub\cryptscript\script-coin\Control\documents\localNode.txt";
+            // Set the path to the local node file
+            string path = Path.Combine(Directory.GetParent(Environment.CurrentDirectory).ToString(), "Documents", "localNode.txt");
 
             Initialize:
             Console.ForegroundColor = ConsoleColor.Cyan;
@@ -68,9 +69,9 @@ namespace scriptcoin
                 {
                     Console.WriteLine("Please enter your public address;");
                     string userID = Console.ReadLine();
-                    
+
                     while (!Console.KeyAvailable)
-                    {                        
+                    {
                         string Hash = Miner.Hasher() + userID + "=1"; 
 
                         using (StreamWriter hash = File.AppendText(path))
