@@ -26,6 +26,10 @@ namespace CryptScript
                 case TokenType.Decimal:
                     Value = Convert.ToString(Convert.ToDouble(Value));
                     break;
+                
+                case TokenType.Wallet:
+                    Value = Value.Substring(2, Value.Length - 2);
+                    break;
             }
         }
 
@@ -205,16 +209,25 @@ namespace CryptScript
                     : TokenType.Integer;
 
         private static double ToDouble(Token x) =>
-            Convert.ToDouble(x.Value);
-        
+            x.Type == TokenType.Bool
+                ? ToBool(x)
+                    ? 1.0
+                    : 0.0
+                : Convert.ToDouble(x.Value);
 
         private static int ToInt(Token x) =>
-            Convert.ToInt32(x.Value);
+            x.Type == TokenType.Bool
+                ? ToBool(x)
+                    ? 1
+                    : 0
+                : Convert.ToInt32(x.Value);
 
         private static bool ToBool(Token x) =>
             x.Type == TokenType.Bool
                 ? x.Value.Substring(0, 1).ToLower() == "t"
-                : x.Type != TokenType.Zilch;
+                : x.Type == TokenType.Integer
+                    ? ToInt(x) != 0
+                    : x.Type != TokenType.Zilch;
 
         private static bool Equal(Token x, Token y)
         {

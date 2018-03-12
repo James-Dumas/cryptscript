@@ -4,12 +4,11 @@ namespace CryptScript
 {
     public class Identifier
     {
-        public string Name { get; set; }
         public Token Reference { get; set; }
-
-        public Identifier(string name)
+        
+        public Identifier()
         {
-            Name = name;
+            Reference = new Token(TokenType.Zilch, "");
         }
     }
 
@@ -17,8 +16,11 @@ namespace CryptScript
     {
         private Dictionary<string, Identifier> IDs { get; set; } = new Dictionary<string, Identifier>();
 
+        public bool HasID(string name) =>
+            IDs.ContainsKey(name);
+
         public void AddID(string name) =>
-            IDs.Add(name, new Identifier(name));
+            IDs.Add(name, new Identifier());
 
         public void RemoveID(string name) =>
             IDs.Remove(name);
@@ -26,7 +28,7 @@ namespace CryptScript
         public void SetReference(string name, Token reference) =>
             IDs[name].Reference = reference;
 
-        public Token GetReference(string name, Token reference) =>
+        public Token GetReference(string name) =>
             IDs[name].Reference;
     }
 }
