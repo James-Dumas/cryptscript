@@ -338,6 +338,7 @@ namespace CryptScript
         For,
         Do,
         End,
+        Break,
         Zilch,
         Bool,
         Integer,
