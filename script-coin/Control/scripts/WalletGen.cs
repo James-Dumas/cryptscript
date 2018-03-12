@@ -8,8 +8,7 @@ namespace ScriptCoin
     {
         public static Tuple<string, string> WalletHash()
         {
-            //Initializes all vars, strings, and byte[]s
-            var random = new Random();
+            Random random = new Random();
 
             string seed1 = string.Empty;
             string seed2 = string.Empty;
@@ -20,7 +19,6 @@ namespace ScriptCoin
             byte[] privData = new byte[512];
             byte[] pubData = new byte[512];
             byte[] tempData = new byte[512];
-            byte[] checkSeed = new byte[512];
 
             SHA256 sHA256 = new SHA256Managed();
             SHA512 sha512 = new SHA512Managed();
@@ -45,19 +43,34 @@ namespace ScriptCoin
             }
 
             //Generates the checksum
-            checkSeed = sha512.ComputeHash(tempData);
-            checkSeed = sha512.ComputeHash(checkSeed);
-            checkSeed = sHA256.ComputeHash(checkSeed);
-
-            //Converts bytes to strings
             privKey = Convert.ToBase64String(privData);
-            checkSum = Convert.ToBase64String(checkSeed);
+            int startIndex = 0;
+            int length = (privKey.Length);
+            checkSum = privKey.Substring(startIndex, length);
+
+            char[] charArray = checkSum.ToCharArray();
+            byte[] byteArray = new byte[checkSum.Length];
+
+            for(int i = 0; i < charArray.Length; i++)
+                byteArray[i] = Convert.ToByte(charArray[i]);
+
+            checkSum = Convert.ToBase64String(sHA256.ComputeHash(sHA256.ComputeHash(byteArray)));
+            checkSum = checkSum.Substring(0, (checkSum.Length / 4));
 
             //Generates public address
-            pubData = Encoding.ASCII.GetBytes("0x00" + privKey + checkSum);
-            pubData = sHA256.ComputeHash(pubData);
+            for (int i = 0; i < 3; i++)
+            {
+                pubData = sha512.ComputeHash(privData);
+                pubData = sHA256.ComputeHash(pubData);
+                tempData = pubData;
+            }
+
+            //Converts bytes to strings and normalizes data
             pubKey = Convert.ToBase64String(pubData);
-            pubKey = ("0x00" + privKey + "a1x0");
+            pubKey = Convert.ToBase64String(pubData);
+            pubKey = "0x00=" + pubKey + checkSum;
+            privKey = Convert.ToBase64String(privData);
+            tempData = new byte[512];
 
             //Returns info
             return new Tuple<string, string>(pubKey, privKey);

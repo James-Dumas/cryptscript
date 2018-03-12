@@ -20,3 +20,9 @@ C:\Users\corbrIsa\Documents\GitHub\cryptscript\script-coin\Control\bin\Debug\net
 C:\Users\corbrIsa\Documents\GitHub\cryptscript\script-coin\Control\bin\Debug\netcoreapp2.0\Control.runtimeconfig.dev.json
 C:\Users\corbrIsa\Documents\GitHub\cryptscript\script-coin\Control\bin\Debug\netcoreapp2.0\Control.dll
 C:\Users\corbrIsa\Documents\GitHub\cryptscript\script-coin\Control\bin\Debug\netcoreapp2.0\Control.pdb
+C:\Users\WollaMat\Desktop\script-coin\Control\obj\Debug\netcoreapp2.0\Control.csprojResolveAssemblyReference.cache
+C:\Users\WollaMat\Desktop\script-coin\Control\obj\Debug\netcoreapp2.0\Control.csproj.CoreCompileInputs.cache
+C:\Users\WollaMat\Desktop\script-coin\Control\obj\Debug\netcoreapp2.0\Control.AssemblyInfoInputs.cache
+C:\Users\WollaMat\Desktop\script-coin\Control\obj\Debug\netcoreapp2.0\Control.AssemblyInfo.cs
+C:\Users\WollaMat\Desktop\script-coin\Control\obj\Debug\netcoreapp2.0\Control.dll
+C:\Users\WollaMat\Desktop\script-coin\Control\obj\Debug\netcoreapp2.0\Control.pdb
