@@ -62,6 +62,19 @@ namespace scriptcoin
             {"Did I tell you the time I fell in love during a backflip? I was heels over head." },
             {"I don’t play soccer because I enjoy the sport. I’m just doing it for kicks." },
             {"People don’t like having to bend over to get their drinks. We really need to raise the bar." },
+            {"Why was the snowman looking through a bag of carrots? He was picking his nose." },
+            {"What's invisible and smells like carrots? Rabbit farts." },
+            {"Did you hear the joke about the king? It ruled." },
+            {"What did the elevator say to the other elevator? 'I think I'm coming down with something'" },
+            {"How many apples grow on a tree? All of them." },
+            {"What did the astronaut's fiancée say when he proposed in space? `I can't breathe!`" },
+            {"Why did the tomato blush? Because it saw the salad dressing." },
+            {"I witnessed an attempted murder earlier, luckily only one crow showed up." },
+            {"What's Whitney Houston's favorite type of coordingation? HAAAAAAAAAAAAAAAAAND EEEEEEEEEEEEEEEEEYEEEEEEEEE🎶" },
+            {"What's at the bottom of the ocean and shivers? A nervous wreck." },
+            {"Why did Cinderella get kicked off the soccer team? Because she kept running from the ball." },
+            {"How do crazy people get through the forest? They take the psycho-path" },
+            {"What do you give a sick bird? Tweetment." },
         };
     }
 }

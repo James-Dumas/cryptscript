@@ -2,7 +2,7 @@ using System;
 using System.Security.Cryptography;
 using System.Text;
 
-namespace ScriptCoin
+namespace scriptcoin
 {
     public class WalletGen
     {

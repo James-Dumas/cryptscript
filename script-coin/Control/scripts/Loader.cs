@@ -1,10 +1,7 @@
 ﻿using System;
 using System.IO;
-using System;
-using System.Collections.Generic;
-using System.Security.Cryptography;
 
-namespace ScriptCoin
+namespace scriptcoin
 {
     public class UserInterface
     {
