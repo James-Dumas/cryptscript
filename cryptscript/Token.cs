@@ -39,8 +39,7 @@ namespace CryptScript
         /// Performs an operation on 1-2 tokens
         /// </summary>
         /// <param name="operation">The operation to perform</param>
-        /// <param name="x">The first token</param>
-        /// <param name="y">The second token</param>
+        /// <param name="inputs">either one or two Tokens</param>
         /// <returns></returns>
         public static Token Operation(OperationType operation, params Token[] inputs)
         {
@@ -83,30 +82,54 @@ namespace CryptScript
                     break;
 
                 case OperationType.Division:
-                    // division always returns decimal
-                    ReturnType = TokenType.Decimal;
-                    ReturnString = Convert.ToString(ToDouble(x) / ToDouble(y));
+                    try
+                    {
+                        // only allow integer return type when the numbers divide evenly
+                        if(ReturnType == TokenType.Integer && ToInt(x) % ToInt(y) != 0)
+                        {
+                            ReturnType = TokenType.Decimal;
+                        }
+
+                        ReturnString = Convert.ToString(
+                            ReturnType == TokenType.Decimal
+                                ? ToDouble(x) / ToDouble(y)
+                                : ToInt(x) / ToInt(y)
+                            );
+                    }
+                    catch(System.DivideByZeroException)
+                    {
+                        ReturnType = TokenType.Error;
+                        ReturnString = "DivideByZeroError";
+                    }
+
                     break;
                 
                 case OperationType.Modulo:
-                    ReturnString = Convert.ToString(
-                        ReturnType == TokenType.Decimal
-                            ? ToDouble(x) % ToDouble(y)
-                            : ToInt(x) % ToInt(y)
-                        );
+                    try
+                    {
+                        ReturnString = Convert.ToString(
+                            ReturnType == TokenType.Decimal
+                                ? ToDouble(x) % ToDouble(y)
+                                : ToInt(x) % ToInt(y)
+                            );
+                    }
+                    catch(System.DivideByZeroException)
+                    {
+                        ReturnType = TokenType.Error;
+                        ReturnString = "DivideByZeroError";
+                    }
+
                     break;
 
                 case OperationType.Concatenation:
-                    string a = x.Type == TokenType.String
-                        ? x.Value
-                        : Convert.ToString(x.Value);
-                    string b = y.Type == TokenType.String
-                        ? y.Value
-                        : Convert.ToString(y.Value);
-                    ReturnString = a + b;
+                    ReturnString = x.Value + y.Value;
                     break;
                 
                 case OperationType.Exponent:
+                    ReturnType = ToDouble(y) < 0
+                        ? TokenType.Decimal
+                        : ReturnType;
+
                     ReturnString = Convert.ToString(
                         ReturnType == TokenType.Decimal
                             ? Math.Pow(ToDouble(x), ToDouble(y))
@@ -237,27 +260,28 @@ namespace CryptScript
 
         #endregion Internal Utility Methods
 
-        #region Operator Overloads
-
-        public static Token operator +(Token x, Token y) =>
-            Operation(ResultType(x, y) == TokenType.String
-                          ? OperationType.Concatenation
-                          : OperationType.Addition,
-                x, y);
-
-        public static Token operator -(Token x, Token y) =>
-            Operation(OperationType.Subraction, x, y);
-
-        public static Token operator *(Token x, Token y) =>
-            Operation(OperationType.Multiplication, x, y);
-
-        public static Token operator /(Token x, Token y) =>
-            Operation(OperationType.Division, x, y);
-
-        public static Token operator %(Token x, Token y) =>
-            Operation(OperationType.Modulo, x, y);
-
-        #endregion Operator Overloads
+        /// <summary>
+        /// Dictionary that relates tokens to their respective operations
+        /// </summary>
+        public static Dictionary<TokenType, OperationType> OperationOf = new Dictionary<TokenType, OperationType>()
+        {
+            { TokenType.Addition, OperationType.Addition },
+            { TokenType.Subraction, OperationType.Subraction },
+            { TokenType.Multiplication, OperationType.Multiplication },
+            { TokenType.Division, OperationType.Division },
+            { TokenType.Modulo, OperationType.Modulo },
+            { TokenType.Exponent, OperationType.Exponent },
+            { TokenType.AND, OperationType.AND },
+            { TokenType.OR, OperationType.OR },
+            { TokenType.XOR, OperationType.XOR },
+            { TokenType.NOT, OperationType.NOT },
+            { TokenType.Equal, OperationType.Equal },
+            { TokenType.Inequal, OperationType.Inequal },
+            { TokenType.Greater, OperationType.Greater },
+            { TokenType.Less, OperationType.Less },
+            { TokenType.GreaterEqual, OperationType.GreaterEqual },
+            { TokenType.LessEqual, OperationType.LessEqual }
+        };
     }
 
     /// <summary>
