@@ -75,6 +75,27 @@ namespace scriptcoin
             {"Why did Cinderella get kicked off the soccer team? Because she kept running from the ball." },
             {"How do crazy people get through the forest? They take the psycho-path" },
             {"What do you give a sick bird? Tweetment." },
+            {"Why do scuba divers fall backwards off the boat? If they fell forwards they'd still be on the boat." },
+            {"What do you call a fake noodle? An impasta." },
+            {"I went ot buy some camouflage trousers the other day but I couldn't find any." },
+            {"What do you call a fish with no eye? Fsh." },
+            {"Why did the orange stop rolling around? It ran out of juice" },
+            {"Two fish swim into a concrete wall. One says to the other `dam!`" },
+            {"Archeaologist: a person whose career lies in ruins." },
+            {"A ship with red paint hit a ship with blue paint, both we marooned." },
+            {"She criticized my apartment, so I knocked her flat." },
+            {"What's the difference between a hippo and a Zippo? A hippo is really heavy and a Zippo is a little lighter." },
+            {"I really like deep sea monster jokes, I keep Kraken up." },
+            {"I only like 25 letters of the alphabet, I don't really know Y" },
+            {"What sound does a sleeping T-Rex make? A dino-snore." },
+            {"A man sued an airline company after he lost his luggage. Sadly, he lost his case." },
+            {"An atom loses an electron, it says, 'Man I really gotta keep an ion them`" },
+            {"6:30 is the best time on a clock, hands down." },
+            {"I hate how early funerals are, I'm not really a mourning person." },
+            {"I lost my job at the bank, a woman told me to check her balance so I pushed her over." },
+            {"Did you hear about the two silk worms in a race? It ended in a tie" }
+            {"Last time I stole a calendar, I got 12 months" },
+            {"" }
         };
     }
 }
