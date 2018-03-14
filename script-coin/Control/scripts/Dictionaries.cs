@@ -133,7 +133,7 @@ namespace scriptcoin
             {"6:30 is the best time on a clock, hands down." },
             {"I hate how early funerals are, I'm not really a mourning person." },
             {"I lost my job at the bank, a woman told me to check her balance so I pushed her over." },
-            {"Did you hear about the two silk worms in a race? It ended in a tie" }
+            {"Did you hear about the two silk worms in a race? It ended in a tie" },
             {"Last time I stole a calendar, I got 12 months" },
             {"" }
         };
