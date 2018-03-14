@@ -5,100 +5,65 @@ namespace scriptcoin
 {
     public class Program
     {
+        /// <summary>
+        /// Gets the directory of the local node document
+        /// </summary>
+        public static string LocalNodeDir =>
+            Path.Combine(Directory.GetParent(Environment.CurrentDirectory).ToString(), "Documents");
+
+        /// <summary>
+        /// Gets the path of the local node document
+        /// </summary>
+        public static string LocalNodePath =>
+            Path.Combine(LocalNodeDir, "localNode.txt");
+
+        /// <summary>
+        /// Version string
+        /// </summary>
+        public static string Version = "v0.0.1";
+
+        /// <summary>
+        /// Exit variable
+        /// </summary>
+        public static bool Quit = false;
+
         public static void Main()
         {
-            // Set the path to the local node file
-            string path = Path.Combine(Directory.GetParent(Environment.CurrentDirectory).ToString(), "Documents", "localNode.txt");
+            // Display version number
+            Util.WriteLineColor("ScriptCoin " + Version, ConsoleColor.Cyan);
 
-            Initialize:
-            Console.ForegroundColor = ConsoleColor.Cyan;
-            Console.WriteLine("Type in a command or use `help` for more information.");
-            Console.ForegroundColor = ConsoleColor.White;
+            // Check if the local node file exists
+            Directory.CreateDirectory(LocalNodeDir);
+            if (!File.Exists(LocalNodePath))
+                File.Create(LocalNodePath);
 
-            string UserInput = Console.ReadLine().ToLower();
-
-            if (Dictionaries.Commands.ContainsKey(UserInput))
+            while(!Quit)
             {
-                if (UserInput == "help")
+                // Get user input
+                Console.Write(">>> ");
+                string[] input = Console.ReadLine().Split(' ');
+                string primaryCommand = input[0].ToLower().Trim();
+
+                // Only check command if input string has content
+                if (primaryCommand.Length != 0)
                 {
-                    Console.WriteLine("Below are a list of commands and their use;");
-                    foreach (var pair in Dictionaries.Commands)
+                    // Check if command exists
+                    bool commandExists = false;
+                    int commandIndex = -1;
+                    for (int i = 0; i < Util.Commands.Count; i++)
                     {
-                        Console.WriteLine("{0},{1}", pair.Key, pair.Value);
+                        commandExists = primaryCommand == Util.Commands[i].Name || commandExists;
+                        commandIndex = i;
+                        if (commandExists) break;
                     }
-                }
-                if (UserInput == "new")
-                {
-                    Tuple<string, string> keys = Encryptor.Encrypt();
-                    string pubKey = keys.Item1;
-                    string privKey = keys.Item2;
 
-                    Console.WriteLine("Your public address is; " + pubKey);
-                    Console.WriteLine("Your private address is; " + privKey);
-                }
-                if (UserInput == "send")
-                {
-                    string userInfo = Encryptor.Decrypt();
-                    if (userInfo == "valid")
-                    {
-                        Console.WriteLine("Where do you want to send Script-Coins to?");
-                        string scriptDest = Console.ReadLine();
-                        Console.WriteLine("How many Script-Coins do you want to send?");
-                        string scriptAmount = Console.ReadLine();
-
-                        Console.WriteLine("Are you sure you want to send " + scriptAmount + " Script-Coins to " + scriptDest + " yes - no");
-                        string userVerify = Console.ReadLine().ToLower();
-                        if (userVerify == "yes")
-                        {
-                            long blockTime = DateTimeOffset.Now.ToUnixTimeSeconds();
-                            string sendAmount = blockTime + "=" + scriptDest + "=" + scriptAmount;
-                            using (StreamWriter hash = File.AppendText(path))
-                            {
-                                hash.WriteLine(sendAmount);
-                            }
-                        }
-                        else Console.WriteLine("The transaction has be cancelled");
-                    }
-                }
-                if (UserInput == "wallet")
-                {
-                    string userInfo = Encryptor.Decrypt();
-                    Console.WriteLine(userInfo);
-                }
-                if (UserInput == "mine")
-                {
-                    Console.WriteLine("Please enter your public address;");
-                    string userID = Console.ReadLine();
-
-                    while (!Console.KeyAvailable)
-                    {
-                        string Hash = Miner.Hasher() + userID + "=1"; 
-
-                        using (StreamWriter hash = File.AppendText(path))
-                        {
-                            hash.WriteLine(Hash);
-                        }
-
-                        Console.WriteLine(Hash + userID);
-                    }
-                }
-                if (UserInput == "code")
-                {
-                    Console.WriteLine("This hasn't been implemented yet");
-                }
-                if (UserInput == "joke")
-                {
-                    Random rnd = new Random();
-                    int joke = rnd.Next(Dictionaries.Jokes.Count);
-                    Console.WriteLine((string)Dictionaries.Jokes[joke]);
+                    // Execute the command
+                    if (commandExists)
+                        Util.Commands[commandIndex].Execute();
+                    else
+                        Util.PrintError("\"" + primaryCommand + "\" is not a valid command.");
                 }
             }
-            else
-            {
-                Console.WriteLine("Unknown command, use `help` for more information");
-            }
-
-            goto Initialize;
         }
     }
 }

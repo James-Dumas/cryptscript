@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Security.Cryptography;
 using System.Text;
 
@@ -15,28 +15,17 @@ namespace scriptcoin
             return new Tuple<string, string>(pubEncrypt, privEncrypt);
         }
 
-        public static string Decrypt()
+        public static bool CheckKeyPair(string publicKey, string privateKey)
         {
-            SHA256 sHA256 = new SHA256Managed();
-            string checkVar = string.Empty;
-            string checkSum = string.Empty;
-            byte[] checkPriv = new byte[16];
+            SHA256 sha = new SHA256Managed();
 
-            Console.WriteLine("Please input your public address and private address;");
-            string pubCheck = Console.ReadLine();
-            string privCheck = Console.ReadLine();
+            string publicChecksum = publicKey.Split('=')[publicKey.Split('=').Length - 1];
+            byte[] privateBytes = new byte[16];
+            privateBytes = Encoding.ASCII.GetBytes(privateKey);
+            string checkSum = Convert.ToBase64String(sha.ComputeHash(sha.ComputeHash(privateBytes)));
 
-            string[] pubVals = pubCheck.Split("="); //pubVals[2] == checksum
-            checkPriv = Encoding.ASCII.GetBytes(privCheck);
-            checkSum = Convert.ToBase64String(sHA256.ComputeHash(sHA256.ComputeHash(checkPriv)));
-
-            if (pubVals[2] == (checkSum.Substring(0, pubVals[2].Length)))
-            {
-                checkVar = "valid";
-            }
-            else checkVar = "bad";
-
-            return checkVar;
+            return publicChecksum == (checkSum.Substring(0, publicChecksum.Length))
+                && publicKey.Length != 0 && privateKey.Length != 0;
         }
     }
 }

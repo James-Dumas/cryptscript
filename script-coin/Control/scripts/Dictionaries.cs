@@ -1,25 +1,65 @@
-﻿using System.Collections.Generic;
+using System;
+using System.Collections.Generic;
 
 namespace scriptcoin
 {
-    public class Dictionaries
+    public class Util
     {
+        /*
         public static readonly Dictionary<string, string> Commands = new Dictionary<string, string>()
         {
-            {"new", " Creates and displays information about new wallet "},
-            {"send", " Send Script-Coin to a destination "},
-            {"wallet", " Displays information about current wallet "},
-            {"code", " Opens programming window "},
-            {"mine", " Begins mining Script-Coin "},
-            {"joke", "Displays a random joke "},
-            {"yes", " Yes "},
-            {"no", " No "},
-            {"help", " Displays help menu "},
+            {"new", "Creates and displays information about new wallet"},
+            {"send", "Send Script-Coin to a destination"},
+            {"wallet", "Displays information about current wallet"},
+            {"code", "Opens programming window"},
+            {"mine", "Begins mining Script-Coin"},
+            {"joke", "Displays a random joke"},
+            {"help", "Displays help menu"},
         };
+        */
+        public static readonly List<Command> Commands = new List<Command>()
+        {
+            new Wallet(),
+            new New(),
+            new Mine(),
+            new Send(),
+            new Code(),
+            new Joke(),
+            new Clear(),
+            new Help(),
+            new Quit()
+        };
+
+        public static void WriteColor(string input, ConsoleColor color)
+        {
+            Console.ForegroundColor = color;
+            Console.Write(input);
+            Console.ForegroundColor = ConsoleColor.White;
+        }
+
+        public static void WriteLineColor(string input, ConsoleColor color) =>
+            WriteColor(input + "\n", color);
+
+        public static void PrintError(string message) =>
+            WriteLineColor("Error: " + message, ConsoleColor.Red);
+
+        public static void PrintWarning(string message) =>
+            WriteLineColor("Warning: " + message, ConsoleColor.Yellow);
+
+        public static void PrintInfo(string message) =>
+            WriteLineColor("Info: " + message, ConsoleColor.Gray);
+
+        public static string ReadLineColor(ConsoleColor color)
+        {
+            Console.ForegroundColor = color;
+            string input = Console.ReadLine();
+            Console.ForegroundColor = ConsoleColor.White;
+            return input;
+        }
 
         public static readonly List<string> Jokes = new List<string>()
         {
-            {"Whats the only shop thats 35+  A printer store!!" },
+            {"Whats the only shop thats 35+? A printer store!!" },
             {"When does a dad joke become a dad joke? When it's fully groan!!" },
             {"Why did the chicken cross the road? To get to the other side!!" },
             {"Did you hear about the restaurant on the moon? Great food, no atmosphere!!" },
