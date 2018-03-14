@@ -1,15 +1,28 @@
 ﻿using System;
 using System.Security.Cryptography;
 using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace scriptcoin
 {
     public class Miner
     {
-	    public static string Hasher()
-	    {
+        //MULTITHREADING CONTROL 
+        public static string Hasher()
+        {
+            string Hash = Hashing();
+
+            //Thread thread1 = 
+
+            return Hash;
+        }
+        
+        //ACTUAL MINER
+        private static string Hashing()
+        {
             string difficulty = "00000";
-            
+
             Random rnd = new Random();
 
             start:
@@ -26,7 +39,7 @@ namespace scriptcoin
 
             if (testHash == difficulty)
             {
-                string blockHash = Hash.Substring(0, (Hash.Length - 10)); 
+                string blockHash = Hash.Substring(0, (Hash.Length - 10));
                 return blockHash;
             }
             else goto start;
