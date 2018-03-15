@@ -22,7 +22,7 @@ namespace scriptcoin
                 tabination = command.Name.Length > tabination
                     ? command.Name.Length
                     : tabination;
-            
+
             // Print help message
             Util.WriteLineColor("Below is a list of all commands:", ConsoleColor.Yellow);
             foreach (Command command in Util.Commands)
@@ -93,11 +93,11 @@ namespace scriptcoin
                         string hashText = blockTime + "=" + destination + "=" + amount;
                         using (StreamWriter writer = File.AppendText(Program.LocalNodePath))
                             writer.WriteLine(hashText);
-                        Console.WriteLine("Transaction complete!");
+                        Console.WriteLine("\nTransaction complete!");
                         break;
 
                     default:
-                        Console.WriteLine("Transaction cancelled.");
+                        Console.WriteLine("\nTransaction cancelled.");
                         break;
                 }
             }
@@ -120,10 +120,10 @@ namespace scriptcoin
         public override string Description => "Clears the console window";
     }
 
-    public class Quit : Command
+    public class Exit : Command
     {
         public override void Execute() => Program.Quit = true;
-        public override string Name => "quit";
+        public override string Name => "exit";
         public override string Description => "Quits the program";
     }
 
@@ -137,11 +137,6 @@ namespace scriptcoin
     {
         public override void Execute()
         {
-            base.Execute();
-            return;
-
-            // DO NOT remove the above lines unless file access to LocalNode has been fixed.
-
             // Get the public address
             Console.Write("Enter your public address: ");
             string publicAddress = Console.ReadLine();
@@ -149,12 +144,24 @@ namespace scriptcoin
             // Mine SC until a key is pressed
             using (StreamWriter writer = File.AppendText(Program.LocalNodePath))
             {
+                MiningDisplay MineGUI = new MiningDisplay()
+                {
+                    Wallet = publicAddress,
+                    HashRate = 0
+                };
+                Random rand = new Random();
+
                 while(!Console.KeyAvailable)
                 {
-                    string hash = Miner.Hasher() + publicAddress + "=1";
-                    writer.WriteLine(hash);
-                    Console.WriteLine(hash);
+                    //string hash = Miner.Hasher() + publicAddress + "=1";
+                    //writer.WriteLine(hash);
+                    //Console.WriteLine(hash);
+                    MineGUI.Display();
+                    MineGUI.HashRate = rand.Next(0, 1000);
+                    System.Threading.Thread.Sleep(1000);
                 }
+
+                Console.Clear();
             }
         }
 

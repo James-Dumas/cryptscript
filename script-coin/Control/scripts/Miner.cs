@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading;
@@ -21,7 +21,7 @@ namespace scriptcoin
         //ACTUAL MINER
         private static string Hashing()
         {
-            string difficulty = "00000";
+            string difficulty = "0";
 
             Random rnd = new Random();
 
