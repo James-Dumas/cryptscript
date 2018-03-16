@@ -4,33 +4,46 @@ namespace CryptScript
 {
     public class Interpreter
     {
+        public static bool IsInteractive { get; set; }
+        public static int LineNumber { get; set; } = 0;
 
-        public static void Main(String[] args)
+        public static void Main(string[] args)
         {
-            // interactive console interpreter
-
-            Console.WriteLine("Type 'exit' to quit.");
-
-            Parser parser = new Parser();
-            while(true)
+            if(args.Length == 0)
             {
-                Console.Write(">> ");
+                // interactive console interpreter
 
-                string input = Console.ReadLine().Trim();
-                if(input == "exit")
-                {
-                    break;
-                }
+                IsInteractive = true;
 
-                if(input.Length > 0)
+                Console.WriteLine("Type 'exit' to quit.");
+
+                Parser parser = new Parser();
+                while(true)
                 {
-                    Lexer lexer = new Lexer(input);
-                    Token result = parser.Parse(lexer.Tokenize());
-                    if(result != null)
+                    Console.Write(">> ");
+
+                    string input = Console.ReadLine().Trim();
+                    if(input == "exit")
                     {
-                        Console.WriteLine(result.ToString());
+                        break;
+                    }
+
+                    if(input.Length > 0)
+                    {
+                        Lexer lexer = new Lexer(input);
+                        IObject result = parser.Parse(lexer.Tokenize());
+                        if(result != null)
+                        {
+                            Console.WriteLine(result.Value.ToString());
+                        }
                     }
                 }
+            }
+            else
+            {
+                // run script file
+
+                IsInteractive = false;
             }
         }
     }

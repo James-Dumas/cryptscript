@@ -14,10 +14,18 @@ namespace CryptScript
             IDs = new IdentifierGroup();
         }
 
-        public Token Parse(List<Token> tokens)
+        public IObject Parse(List<Token> tokens)
         {
+            IObject result = null;
+
             for(int i = 0; i < tokens.Count; i++)
             {
+                // check for unknown tokens
+                if(tokens[i].Type == TokenType.Unknown)
+                {
+                    return new Error(ErrorType.UnknownTokenError);
+                }
+
                 // remove comments
                 if(tokens[i].Type == TokenType.Comment)
                 {
@@ -25,251 +33,218 @@ namespace CryptScript
                 }
             }
 
-            Token returnToken = null;
-            if(tokens.Count > 1 && tokens[0].Type == TokenType.ID && tokens[1].Type == TokenType.Set)
+            if(walletAddr.Reference is Zilch)
             {
-                // check for 'variable = expression' syntax
-
-                Token expressionResult = this.GetTokenResult(tokens.GetRange(2, tokens.Count - 2)); 
-                string IdName = tokens[0].Value;
-                if(expressionResult.Type == TokenType.Error)
-                {
-                    returnToken = expressionResult;
-                }
-                else
-                {
-                    if(!IDs.HasID(IdName))
-                    {
-                        IDs.AddID(IdName);
-                    }
-
-                    IDs.SetReference(IdName, expressionResult);
-                }
-            }
-            else if(tokens[0].Type == TokenType.Wallet)
-            {
-                // check for wallet address
-                walletAddr.Reference = tokens[0];
+                result = new Error(ErrorType.NoWalletAddressError);
             }
             else
             {
-                returnToken = this.GetTokenResult(tokens);
-            }
-
-            return returnToken;
-        }
-
-        public Token GetTokenResult(List<Token> expression)
-        {
-            // replace all Identifiers with their token representations
-            for(int i = 0; i < expression.Count; i++)
-            {
-                if(expression[i].Type == TokenType.ID)
+                if(tokens.Count > 1 && tokens[0].Type == TokenType.ID && tokens[1].Type == TokenType.Set)
                 {
-                    string varName = expression[i].Value;
-                    if(!IDs.HasID(varName))
-                    {
-                        IDs.AddID(varName);
-                    }
+                    // check for 'variable = expression' syntax
 
-                    expression[i] = IDs.GetReference(varName);
+                    IObject expressionResult = EvaluateExpression(tokens.GetRange(2, tokens.Count - 2)).Result(); 
+                    string IdName = tokens[0].Value;
+                    if(expressionResult is Error)
+                    {
+                        result = expressionResult;
+                    }
+                    else
+                    {
+                        IDs.SetReference(IdName, expressionResult);
+                    }
+                }
+                else
+                {
+                    result = EvaluateExpression(tokens).Result();
                 }
             }
 
+            if(tokens[0].Type == TokenType.Wallet)
+            {
+                // check for wallet address
+                walletAddr.Reference = new String(tokens[0].Value);
+                result = null;
+            }
+
+            return result;
+        }
+
+        public IExpression EvaluateExpression(List<Token> expression)
+        {
             // DEBUG
-            string output = "";
+            string output = "Parsing: ";
             foreach(Token t in expression)
             {
-                output += t.ToString();
+                output += t.ToString() + " ";
             }
             Console.WriteLine(output);
             // DEBUG
 
-            Token newToken = new Token(TokenType.Error, "SyntaxError");
+            while(expression.Count > 0 && expression[0].Type == TokenType.LeftParenthesis && expression[expression.Count - 1].Type == TokenType.RightParenthesis)
+            {
+                // remove parentheses around expression
+                expression = expression.GetRange(1, expression.Count - 2);
+            }
+
             switch(expression.Count)
             {
+                case 0:
+                    return new BaseExpression(new Error(ErrorType.SyntaxError));
+
                 case 1:
-                    newToken = expression[0];
-                    break;
-
+                    return new BaseExpression(CreateFromToken(expression[0]));
+                
                 case 2:
-                    if(Token.OperationOf.ContainsKey(expression[0].Type))
+                    switch(expression[0].Type)
                     {
-                        if(expression[0].Type == TokenType.Subraction)
-                        {
-                            // parse negative numbers
-                            newToken = Token.Operation(OperationType.Subraction, new Token(TokenType.Integer, "0"), expression[1]);
-                        }
-                        else if(expression[0].Type == TokenType.NOT)
-                        {
-                            // not operation
-                            newToken = Token.Operation(OperationType.NOT, expression[1]);
-                        }
+                        case TokenType.Subraction:
+                            return new Expression(new BaseExpression(CreateObject(0)),
+                                                  new BaseExpression(CreateFromToken(expression[1])),
+                                                  OperationType.Subraction);
+
+                        case TokenType.NOT:
+                            return new Expression(new BaseExpression(CreateFromToken(expression[1])),
+                                                  new BaseExpression(CreateFromToken(expression[1])),
+                                                  OperationType.NOT);
+
+                        default:
+                            return new BaseExpression(new Error(ErrorType.SyntaxError));
+
                     }
-
-                    break;
-
+                
                 case 3:
-                    if(Token.OperationOf.ContainsKey(expression[1].Type))
+                    if(!Token.OperationOf.ContainsKey(expression[1].Type))
                     {
-                        // this is where operations are actually performed
+                        return new BaseExpression(new Error(ErrorType.SyntaxError));
+                    }
+                    else
+                    {
+                        // perform operations that use two tokens
+                        return new Expression(new BaseExpression(CreateFromToken(expression[0])),
+                                              new BaseExpression(CreateFromToken(expression[2])),
+                                              Token.OperationOf[expression[1].Type]);
+                    }
+                
+                default:
+                    
+                    // create Expression instance from tokens by parsing expression tokens in reverse order of operations
+                    // which is: Boolean, Addition/Subtraction, Multiplication/Division, Exponent, Parentheses
+                    // within boolean: AND/OR/XOR, Equal/Inequal, Greater/Lesser, NOT
 
-                        if(expression[0].Type == TokenType.String && expression[1].Type != TokenType.Addition)
+                    int numParens = 0;
+                    int index = -1;
+                    int step = 0;
+                    while(index == -1 && step <= 6)
+                    {
+                        for(int i = expression.Count - 1; i >= 0; i--)
                         {
-                            // return error if string is followed by a math operation
-                            newToken = new Token(TokenType.Error, "TypeMismatch");
-                        }
-                        else if(expression[0].Type == TokenType.Subraction)
-                        {
-                            // find negative numbers
-                            newToken = Token.Operation(OperationType.Subraction, new Token(TokenType.Integer, "0"), expression[1]);
-                        }
-                        else if(expression[0].Type == TokenType.NOT)
-                        {
-                            // not operation
-                            newToken = Token.Operation(OperationType.NOT, expression[1]);
-                        }
-                        else
-                        {
-                            // perform operations that use two tokens
-                            OperationType opType;
-
-                            if(expression[1].Type == TokenType.Addition)
+                            if(expression[i].Type == TokenType.RightParenthesis)
                             {
-                                // determine concatenation or addition for plus token
-                                opType = expression[0].Type == TokenType.String
-                                    ? OperationType.Concatenation
-                                    : OperationType.Addition;
+                                numParens++;
+                            }
+                            if(numParens > 0)
+                            {
+                                if(expression[i].Type == TokenType.LeftParenthesis)
+                                {
+                                    numParens--;
+                                }
                             }
                             else
                             {
-                                opType = Token.OperationOf[expression[1].Type];
+                                if((step == 0 && (new List<TokenType> {TokenType.AND, TokenType.OR, TokenType.XOR}.Contains(expression[i].Type)))
+                                || (step == 1 && (expression[i].Type == TokenType.Equal || expression[i].Type == TokenType.Inequal))
+                                || (step == 2 && (new List<TokenType> {TokenType.Greater, TokenType.GreaterEqual, TokenType.Less, TokenType.LessEqual}.Contains(expression[i].Type)))
+                                || (step == 3 && (expression[i].Type == TokenType.NOT))
+                                || (step == 4 && (expression[i].Type == TokenType.Addition || expression[i].Type == TokenType.Subraction))
+                                || (step == 5 && (new List<TokenType> {TokenType.Multiplication, TokenType.Division, TokenType.Modulo}.Contains(expression[i].Type)))
+                                || (step == 6 && (expression[i].Type == TokenType.Exponent)))
+                                {
+                                    index = i;
+                                    break;
+                                }
                             }
-
-                            newToken = Token.Operation(opType, expression[0], expression[2]);
                         }
-                    }
-                    else if(expression[0].Type == TokenType.LeftParenthesis && expression[2].Type == TokenType.RightParenthesis)
-                    {
-                        newToken = expression[1];
+
+                        step++;
                     }
 
+                    if(expression[index].Type == TokenType.NOT)
+                    {
+                        return new Expression(EvaluateExpression(expression.GetRange(index + 1, expression.Count - index - 1)),
+                                              new BaseExpression(new Zilch()),
+                                              OperationType.NOT);
+                    }
+                    else
+                    {
+                        return new Expression(EvaluateExpression(expression.GetRange(0, index)),
+                                              EvaluateExpression(expression.GetRange(index + 1, expression.Count - index - 1)),
+                                              Token.OperationOf[expression[index].Type]);
+                    }
+
+            }
+        }
+
+        public IObject CreateFromToken(Token t)
+        {
+            IObject result = new Error(ErrorType.SyntaxError);
+
+            switch(t.Type)
+            {
+                case TokenType.ID:
+                    result = IDs.GetReference(t.Value);
                     break;
 
-                default:
-                    // token list is split into smaller chunks based on order of operations and simplified down to one token
+                case TokenType.Integer:
+                    result = new Integer(t.Value);
+                    break;
 
-                    int pointer = 0;
+                case TokenType.Decimal:
+                    result = new Decimal(t.Value);
+                    break;
+                
+                case TokenType.String:
+                    result = new String(t.Value);
+                    break;
 
-                    // search through left to right for parentheses
-                    int parenStart = -1;
-                    int parensBetween = 0;
-                    while(pointer < expression.Count)
-                    {
-                        if(expression[pointer].Type == TokenType.LeftParenthesis)
-                        {
-                            if(parenStart == -1)
-                            {
-                                parenStart = pointer;
-                            }
-                            else
-                            {
-                                parensBetween++;
-                            }
-                        }
-                        else if(expression[pointer].Type == TokenType.RightParenthesis)
-                        {
-                            // evaluate tokens in parentheses recursively and replace them in the list with their result
-                            if(parensBetween == 0)
-                            {
-                                Token evalToken = GetTokenResult(expression.GetRange(parenStart + 1, pointer - parenStart - 1));
-                                expression.RemoveRange(parenStart, pointer - parenStart + 1);
-                                expression.Insert(parenStart, evalToken);
-                                pointer = -1;
-                                parenStart = -1;
-                            }
-                            else
-                            {
-                                parensBetween--;
-                            }
-                        }
+                case TokenType.Bool:
+                    result = new Boolean(t.Value.ToLower());
+                    break;
 
-                        pointer++;
-                    }
-
-                    pointer = 1;
-
-                    // for exponents
-                    while(pointer < expression.Count - 1)
-                    {
-                        if(expression[pointer].Type == TokenType.Exponent)
-                        {
-                            Token evalToken = GetTokenResult(expression.GetRange(pointer - 1, 3));
-                            expression.RemoveRange(pointer - 1, 3);
-                            expression.Insert(pointer - 1, evalToken);
-                            pointer = 0;
-                        }
-
-                        pointer++;
-                    }
-
-                    pointer = 1;
-
-                    // for multiplication/division
-                    while(pointer < expression.Count - 1)
-                    {
-                        if(new List<TokenType> {TokenType.Multiplication, TokenType.Division, TokenType.Modulo}.Contains(expression[pointer].Type))
-                        {
-                            Token evalToken = GetTokenResult(expression.GetRange(pointer - 1, 3));
-                            expression.RemoveRange(pointer - 1, 3);
-                            expression.Insert(pointer - 1, evalToken);
-                            pointer = 0;
-                        }
-
-                        pointer++;
-                    }
-
-                    pointer = 1;
-
-                    // for addition/subtraction
-                    while(pointer < expression.Count - 1)
-                    {
-                        if(expression[pointer].Type == TokenType.Addition || expression[pointer].Type == TokenType.Subraction)
-                        {
-                            Token evalToken = GetTokenResult(expression.GetRange(pointer - 1, 3));
-                            expression.RemoveRange(pointer - 1, 3);
-                            expression.Insert(pointer - 1, evalToken);
-                            pointer = 0;
-                        }
-
-                        pointer++;
-                    }
-
-                    pointer = 1;
-
-                    // for boolean operations
-                    while(pointer < expression.Count - 1)
-                    {
-                        if(new List<TokenType> {TokenType.AND, TokenType.OR, TokenType.XOR, TokenType.Equal, TokenType.Inequal,
-                                                TokenType.Greater, TokenType.Less, TokenType.GreaterEqual, TokenType.LessEqual}.Contains(expression[pointer].Type))
-                        {
-                            Token evalToken = GetTokenResult(expression.GetRange(pointer - 1, 3));
-                            expression.RemoveRange(pointer - 1, 3);
-                            expression.Insert(pointer - 1, evalToken);
-                            pointer = 0;
-                        }
-
-                        pointer++;
-                    }
-
-                    newToken = expression.Count > 1
-                        ? new Token(TokenType.Error, "SyntaxError")
-                        : expression[0];
-                    
+                case TokenType.Zilch:
+                    result = new Zilch();
                     break;
             }
 
-            return newToken;
+            return result;
+        }
+
+        public static IObject CreateObject(object value)
+        {
+            IObject result = new Zilch();
+            Type t = value.GetType();
+            if(value == null)
+            {
+                result = new Zilch();
+            }
+            else if(t.Equals(typeof(int)))
+            {
+                result = new Integer(value);
+            }
+            else if(t.Equals(typeof(double)))
+            {
+                result = new Decimal(value);
+            }
+            else if(t.Equals(typeof(string)))
+            {
+                result = new String(value);
+            }
+            else if(t.Equals(typeof(bool)))
+            {
+                result = new Boolean(value);
+            }
+
+            return result;
         }
     }
 }

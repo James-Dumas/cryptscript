@@ -11,7 +11,7 @@ namespace CryptScript
 
         public static Dictionary<string, TokenType> Tokens { get; } = new Dictionary<string, TokenType>()
         {
-            { " *#![a-zA-Z0-9]+$",                TokenType.Wallet },
+            { " *#![a-zA-Z0-9]+",                 TokenType.Wallet },
             { " *\"[^\"]*\"",                     TokenType.String },
             { " *'[^']*'",                        TokenType.String },
             { @" *\+",                            TokenType.Addition },
@@ -21,13 +21,13 @@ namespace CryptScript
             { " *%",                              TokenType.Modulo },
             { @" *\^",                            TokenType.Exponent },
             { " *&&",                             TokenType.AND },
-            { " +(?i)(and) +",                    TokenType.AND },
+            { " *(?i)(and)",                      TokenType.AND },
             { @" *\|\|",                          TokenType.OR },
-            { " +(?i)(or) +",                     TokenType.OR },
+            { " *(?i)(or)",                       TokenType.OR },
             { @" *\|\|>",                         TokenType.XOR },
-            { " +(?i)(xor) +",                    TokenType.XOR },
+            { " *(?i)(xor)",                      TokenType.XOR },
             { " *!",                              TokenType.NOT },
-            { " +(?i)(not) +",                    TokenType.NOT },
+            { " *(?i)(not)",                      TokenType.NOT },
             { " *==",                             TokenType.Equal },
             { " *!=",                             TokenType.Inequal },
             { " *>",                              TokenType.Greater },
@@ -43,7 +43,7 @@ namespace CryptScript
             { @" *\}",                            TokenType.RightCurly },
             { " *,",                              TokenType.Comma },
             { " *~[^#]*",                         TokenType.Comment },
-            { " *#[a-zA-Z0-9]+$",                 TokenType.Buffer },
+            { " *#[a-zA-Z0-9]+",                  TokenType.Buffer },
             { " *(?i)(supposing that)",           TokenType.If },
             { " *(?i)(thenceforth)",              TokenType.Then },
             { " *(?i)(contrarily)",               TokenType.Else },
@@ -59,6 +59,7 @@ namespace CryptScript
             { @" *\d*\.\d+",                      TokenType.Decimal },
             { @" *\d+",                           TokenType.Integer },
             { " *[A-Za-z][A-Za-z0-9_]*",          TokenType.ID },
+            { " *.",                              TokenType.Unknown },
         };
 
         #endregion Public Fields
@@ -75,11 +76,10 @@ namespace CryptScript
         public List<Token> Tokenize()
         {
             List<Token> tokens = new List<Token>();
-            Token errorToken = new Token(TokenType.Error, "SyntaxError");
 
             for (int i = 0; i < Text.Length;)
             {
-                Token newToken = new Token(TokenType.Blank, "");
+                Token newToken = new Token(TokenType.Unknown, "");
                 bool match = false;
                 bool error = false;
                 int end = Text.Length;
@@ -108,16 +108,8 @@ namespace CryptScript
                     end--;
                 }
 
-                // return syntax error when text can't be tokenized
-                if (error)
-                {
-                    tokens.Add(errorToken);
-                    break;
-                }
-                else
-                {
-                    tokens.Add(newToken);
-                }
+                tokens.Add(newToken);
+                if(error) { break; }
             }
 
             return tokens;

@@ -4,11 +4,11 @@ namespace CryptScript
 {
     public class Identifier
     {
-        public Token Reference { get; set; }
+        public IObject Reference { get; set; }
         
         public Identifier()
         {
-            Reference = new Token(TokenType.Zilch, "");
+            Reference = new Zilch();
         }
     }
 
@@ -25,10 +25,23 @@ namespace CryptScript
         public void RemoveID(string name) =>
             IDs.Remove(name);
 
-        public void SetReference(string name, Token reference) =>
+        public void SetReference(string name, IObject reference)
+        {
+            if(!HasID(name))
+            {
+                AddID(name);
+            }
             IDs[name].Reference = reference;
+        }
 
-        public Token GetReference(string name) =>
-            IDs[name].Reference;
+        public IObject GetReference(string name)
+        {
+            if(!HasID(name))
+            {
+                AddID(name);
+            }
+
+            return IDs[name].Reference;
+        }
     }
 }
