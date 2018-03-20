@@ -61,6 +61,16 @@ namespace CryptScript
             { TokenType.GreaterEqual, OperationType.GreaterEqual },
             { TokenType.LessEqual, OperationType.LessEqual }
         };
+
+        public static List<TokenType> LoopTokens = new List<TokenType>()
+        {
+            TokenType.If,
+            TokenType.Elif,
+            TokenType.Else,
+            TokenType.While,
+            TokenType.For,
+            TokenType.Func
+        };
     }
 
     /// <summary>
@@ -102,9 +112,11 @@ namespace CryptScript
         Elif,
         While,
         For,
+        Func,
         Do,
         End,
         Break,
+        Return,
         Zilch,
         Bool,
         Integer,

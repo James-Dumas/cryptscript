@@ -181,21 +181,21 @@ namespace CryptScript
             return Parser.CreateObject(result);
         }
 
-        private static double ToDouble(IObject x) =>
+        public static double ToDouble(IObject x) =>
             x is Boolean
                 ? ToBool(x)
                     ? 1.0
                     : 0.0
                 : Convert.ToDouble(x.Value);
 
-        private static int ToInt(IObject x) =>
+        public static int ToInt(IObject x) =>
             x is Boolean
                 ? ToBool(x)
                     ? 1
                     : 0
                 : Convert.ToInt32(x.Value);
 
-        private static bool ToBool(IObject x) =>
+        public static bool ToBool(IObject x) =>
             x is Boolean
                 ? (bool) x.Value
                 : x is Integer

@@ -6,15 +6,15 @@ namespace CryptScript
     public class Parser
     {
         private IdentifierGroup IDs { get; set; }
-        private Identifier walletAddr { get; set; }
+        private bool inLoop { get; set; } = false;
 
-        public Parser()
+        public Parser(IdentifierGroup ids)
         {
-            walletAddr = new Identifier();
-            IDs = new IdentifierGroup();
+            IDs = ids;
+            BuiltIn.AddBuiltIns(IDs);
         }
 
-        public IObject Parse(List<Token> tokens)
+        public IObject Parse(List<Token> tokens, bool inFunc)
         {
             IObject result = null;
 
@@ -33,58 +33,184 @@ namespace CryptScript
                 }
             }
 
-            if(walletAddr.Reference is Zilch)
+            if(Interpreter.WalletAddr.Reference is Zilch)
             {
                 result = new Error(ErrorType.NoWalletAddressError);
             }
             else
             {
-                if(tokens.Count > 1 && tokens[0].Type == TokenType.ID && tokens[1].Type == TokenType.Set)
-                {
-                    // check for 'variable = expression' syntax
+                // mine until you get a block
+                // NOTE: insert reference to miner here
 
-                    IObject expressionResult = EvaluateExpression(tokens.GetRange(2, tokens.Count - 2)).Result(); 
-                    string IdName = tokens[0].Value;
-                    if(expressionResult is Error)
+                if(tokens.Count > 0)
+                {
+                    if(tokens.Count > 1 && tokens[0].Type == TokenType.ID && tokens[1].Type == TokenType.Set)
                     {
-                        result = expressionResult;
+                        // check for 'variable = expression' syntax
+
+                        IObject expressionResult = EvaluateExpression(tokens.GetRange(2, tokens.Count - 2)).Result(); 
+                        string IdName = tokens[0].Value;
+                        if(expressionResult is Error)
+                        {
+                            result = expressionResult;
+                        }
+                        else
+                        {
+                            IDs.SetReference(IdName, expressionResult);
+                        }
+                    }
+                    else if(tokens.Count > 3 && tokens[0].Type == TokenType.Func && tokens[1].Type == TokenType.ID && tokens[2].Type == TokenType.LeftParenthesis && tokens[tokens.Count - 1].Type == TokenType.RightParenthesis)
+                    {
+                        // check for function declaration
+                        List<string> args = new List<string>() {};
+                        if(tokens[3].Type != TokenType.RightParenthesis)
+                        {
+                            foreach(List<Token> arg in ParseCommaSyntax(tokens.GetRange(3, tokens.Count - 4)))
+                            {
+                                if(arg.Count > 1 || arg[0].Type != TokenType.ID)
+                                {
+                                    return new Error(ErrorType.SyntaxError);
+                                }
+
+                                args.Add(arg[0].Value);
+                            }
+                        }
+
+                        // NOTE: WIP code
+                        // TODO: allow function declaration by waiting for more tokenized lines of code
+                        //       and storing them until end token is found
+
+                        List<List<Token>> code = new List<List<Token>>();
+
+
+                        IDs.SetReference(tokens[1].Value, new Routine(code, args));
+                    }
+                    /*
+                    else if(tokens[0].Type == TokenType.If && tokens[tokens.Count - 1].Type == TokenType.Do)
+                    {
+                        // check for if statement
+
+                        if(Expression.ToBool(EvaluateExpression(tokens.GetRange(1, tokens.Count - 2)).Result()))
+                        {
+
+                        }
+                        else
+                        {
+
+                        }
+                    }
+                    */
+                    else if(tokens.Count > 1 && tokens[0].Type == TokenType.Return && inFunc)
+                    {
+                        // check for return keyword
+                        result = EvaluateExpression(tokens.GetRange(1, tokens.Count - 1)).Result();
                     }
                     else
                     {
-                        IDs.SetReference(IdName, expressionResult);
+                        result = EvaluateExpression(tokens).Result();
+                        // if in a function, still evaluate but don't return the result
+                        if(inFunc)
+                        {
+                            result = null;
+                        }
                     }
-                }
-                else
-                {
-                    result = EvaluateExpression(tokens).Result();
                 }
             }
 
             if(tokens[0].Type == TokenType.Wallet)
             {
                 // check for wallet address
-                walletAddr.Reference = new String(tokens[0].Value);
+                Interpreter.WalletAddr.Reference = new String(tokens[0].Value);
                 result = null;
             }
 
+            if(result is Error)
+            {
+                ThrowError((Error) result);
+            }
             return result;
         }
 
         public IExpression EvaluateExpression(List<Token> expression)
         {
             // DEBUG
+            /*
             string output = "Parsing: ";
             foreach(Token t in expression)
             {
                 output += t.ToString() + " ";
             }
             Console.WriteLine(output);
+            */
             // DEBUG
 
             while(expression.Count > 0 && expression[0].Type == TokenType.LeftParenthesis && expression[expression.Count - 1].Type == TokenType.RightParenthesis)
             {
                 // remove parentheses around expression
                 expression = expression.GetRange(1, expression.Count - 2);
+            }
+
+            for(int i = 0; i < expression.Count - 2; i++)
+            {
+                if(expression[i].Type == TokenType.ID && expression[i+1].Type == TokenType.LeftParenthesis)
+                {
+                    // find ending parenthesis
+                    int parenEnd = i + 2;
+                    int numParens = 0;
+                    while(true)
+                    {
+                        if(expression[parenEnd].Type == TokenType.LeftParenthesis)
+                        {
+                            numParens++;
+                        }
+                        else if(expression[parenEnd].Type == TokenType.RightParenthesis)
+                        {
+                            if(numParens > 0)
+                            {
+                                numParens--;
+                            }
+                            else
+                            {
+                                break;
+                            }
+                        }
+
+                        parenEnd++;
+                        if(parenEnd >= expression.Count)
+                        {
+                            return new BaseExpression(new Error(ErrorType.SyntaxError));
+                        }
+                    }
+
+                    // try to call function
+                    IObject calledObj = IDs.GetReference(expression[i].Value);
+                    if(calledObj is ICallable)
+                    {
+                        List<IObject> args = new List<IObject>() {};
+
+                        if(parenEnd > i + 2)
+                        {
+                            foreach(List<Token> argExpression in ParseCommaSyntax(expression.GetRange(i+2, parenEnd - i - 2)))
+                            {
+                                args.Add(EvaluateExpression(argExpression).Result());
+                            }
+                        }
+
+                        int num = 0;
+                        while(IDs.HasID("r-" + num.ToString()))
+                        {
+                            num++;
+                        }
+
+                        IDs.SetReference("r-" + num.ToString(), ((ICallable) calledObj).Call(args));
+                        expression.RemoveRange(i, parenEnd - i + 1);
+                        expression.Insert(i, new Token(TokenType.ID, "r-" + num.ToString()));
+                    }
+                    else
+                    {
+                        return new BaseExpression(new Error(ErrorType.IdNotCallableError));
+                    }
+                }
             }
 
             switch(expression.Count)
@@ -169,20 +295,52 @@ namespace CryptScript
                         step++;
                     }
 
+                    IExpression result;
                     if(expression[index].Type == TokenType.NOT)
                     {
-                        return new Expression(EvaluateExpression(expression.GetRange(index + 1, expression.Count - index - 1)),
+                        result = new Expression(EvaluateExpression(expression.GetRange(index + 1, expression.Count - index - 1)),
                                               new BaseExpression(new Zilch()),
                                               OperationType.NOT);
                     }
                     else
                     {
-                        return new Expression(EvaluateExpression(expression.GetRange(0, index)),
+                        result = new Expression(EvaluateExpression(expression.GetRange(0, index)),
                                               EvaluateExpression(expression.GetRange(index + 1, expression.Count - index - 1)),
                                               Token.OperationOf[expression[index].Type]);
                     }
 
+                    int num = 0;
+                    while(IDs.HasID("r-" + num.ToString()))
+                    {
+                        IDs.RemoveID("r-" + num.ToString());
+                        num++;
+                    }
+
+                    return result;
+
             }
+        }
+
+        public static void ThrowError(Error e)
+        {
+            Interpreter.StopExecution = true;
+            Interpreter.ErrorMsg = (string) e.Value;
+        }
+
+        public static List<List<Token>> ParseCommaSyntax(List<Token> expression)
+        {
+            List<List<Token>> result = new List<List<Token>>();
+            int start = 0;
+            for(int i = 0; i <= expression.Count; i++)
+            {
+                if(i == expression.Count || expression[i].Type == TokenType.Comma)
+                {
+                    result.Add(expression.GetRange(start, i - start));
+                    start = i + 1;
+                }
+            }
+
+            return result;
         }
 
         public IObject CreateFromToken(Token t)

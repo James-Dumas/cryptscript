@@ -34,6 +34,8 @@ namespace CryptScript
         UnknownTokenError,
         TypeMismatchError,
         DivideByZeroError,
+        ArgumentError,
+        IdNotCallableError,
         NoWalletAddressError
     }
 }
