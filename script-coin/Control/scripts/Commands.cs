@@ -25,7 +25,7 @@ namespace scriptcoin
             Util.WriteLineColor("Below is a list of all commands:", ConsoleColor.Yellow);
             foreach (Command command in Util.Commands)
             {
-                Util.WriteColor("    " + command.Name, ConsoleColor.Yellow);
+                Util.WriteColor("   " + command.Name, ConsoleColor.Yellow);
                 for (int i = 0; i < tabination - command.Name.Length; i++)
                     Console.Write(' ');
                 Util.WriteLineColor(" -> " + command.Description, ConsoleColor.Yellow);
@@ -135,10 +135,7 @@ namespace scriptcoin
     {
         public override void Execute()
         {
-            while (!Console.KeyAvailable)
-            {
-                Mining.MineStart();
-            }
+            Mining.MineStart();
         }
 
         public override string Name => "mine";

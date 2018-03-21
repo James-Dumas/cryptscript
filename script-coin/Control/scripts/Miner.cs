@@ -24,8 +24,6 @@ namespace scriptcoin
 
             Miner.StopAll();
             Console.WriteLine("Mining has stopped. {0} mining threads were used.", Miners.Count());
-
-            Console.ReadKey();
         }
     }
 
@@ -33,6 +31,8 @@ namespace scriptcoin
     {
         public Thread Thread { get; set; }
         public bool IsActive { get; set; }
+
+        private bool _quitThread = false;
 
         public Miner()
         {
@@ -77,6 +77,8 @@ namespace scriptcoin
             }
         }
 
+        public void Abort() => _quitThread = true;
+
         public void Mine()
         {
 
@@ -84,7 +86,7 @@ namespace scriptcoin
             byte[] hashValue;
             string Difficulty = "00000";
 
-            while (true)
+            while (!_quitThread)
             {
                 string Reward = Blockchain.Reward();
 
@@ -134,7 +136,7 @@ namespace scriptcoin
 
                 if (miner.Thread.IsAlive)
                 {
-                    miner.Thread.Abort();
+                    miner.Abort();
                 }
             }
         }
