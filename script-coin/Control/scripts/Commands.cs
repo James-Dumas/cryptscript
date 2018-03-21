@@ -1,7 +1,5 @@
 using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Text;
 
 namespace scriptcoin
 {
@@ -22,7 +20,7 @@ namespace scriptcoin
                 tabination = command.Name.Length > tabination
                     ? command.Name.Length
                     : tabination;
-            
+
             // Print help message
             Util.WriteLineColor("Below is a list of all commands:", ConsoleColor.Yellow);
             foreach (Command command in Util.Commands)
@@ -69,7 +67,7 @@ namespace scriptcoin
             {
                 // Get the destination address
                 Console.Write("Enter the destination address: ");
-                string destination = Util.ReadLineColor(ConsoleColor.DarkGray).Trim();
+                string destination = Util.ReadLineColor(ConsoleColor.DarkGray).Trim() + "=" + publicKey;
 
                 // Get the transaction amount
                 double amount = 0;
@@ -85,19 +83,19 @@ namespace scriptcoin
                 }
 
                 // Confirm transaction
-                Console.Write("Are you sure you want to send {0} Script-Coins to the destination specified? [y/N] ", amount);
+                Console.Write("Are you sure you want to send {0} Script-Coins to the destination specified? [y/n] ", amount);
                 switch (Console.ReadKey().Key)
                 {
                     case ConsoleKey.Y:
                         long blockTime = DateTimeOffset.Now.ToUnixTimeSeconds();
                         string hashText = blockTime + "=" + destination + "=" + amount;
-                        using (StreamWriter writer = File.AppendText(Program.LocalNodePath))
+                        using (StreamWriter writer = File.AppendText(Directory.GetCurrentDirectory() + "\\Documents\\localNode.txt"))
                             writer.WriteLine(hashText);
-                        Console.WriteLine("Transaction complete!");
+                        Console.WriteLine("\nTransaction complete!");
                         break;
 
                     default:
-                        Console.WriteLine("Transaction cancelled.");
+                        Console.WriteLine("\nTransaction cancelled.");
                         break;
                 }
             }
@@ -120,10 +118,10 @@ namespace scriptcoin
         public override string Description => "Clears the console window";
     }
 
-    public class Quit : Command
+    public class Exit : Command
     {
         public override void Execute() => Program.Quit = true;
-        public override string Name => "quit";
+        public override string Name => "exit";
         public override string Description => "Quits the program";
     }
 
@@ -137,24 +135,9 @@ namespace scriptcoin
     {
         public override void Execute()
         {
-            base.Execute();
-            return;
-
-            // DO NOT remove the above lines unless file access to LocalNode has been fixed.
-
-            // Get the public address
-            Console.Write("Enter your public address: ");
-            string publicAddress = Console.ReadLine();
-
-            // Mine SC until a key is pressed
-            using (StreamWriter writer = File.AppendText(Program.LocalNodePath))
+            while (!Console.KeyAvailable)
             {
-                while(!Console.KeyAvailable)
-                {
-                    string hash = Miner.Hasher() + publicAddress + "=1";
-                    writer.WriteLine(hash);
-                    Console.WriteLine(hash);
-                }
+                Mining.MineStart();
             }
         }
 

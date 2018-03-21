@@ -5,18 +5,6 @@ namespace scriptcoin
 {
     public class Util
     {
-        /*
-        public static readonly Dictionary<string, string> Commands = new Dictionary<string, string>()
-        {
-            {"new", "Creates and displays information about new wallet"},
-            {"send", "Send Script-Coin to a destination"},
-            {"wallet", "Displays information about current wallet"},
-            {"code", "Opens programming window"},
-            {"mine", "Begins mining Script-Coin"},
-            {"joke", "Displays a random joke"},
-            {"help", "Displays help menu"},
-        };
-        */
         public static readonly List<Command> Commands = new List<Command>()
         {
             new Wallet(),
@@ -27,7 +15,7 @@ namespace scriptcoin
             new Joke(),
             new Clear(),
             new Help(),
-            new Quit()
+            new Exit()
         };
 
         public static void WriteColor(string input, ConsoleColor color)
@@ -134,8 +122,7 @@ namespace scriptcoin
             {"I hate how early funerals are, I'm not really a mourning person." },
             {"I lost my job at the bank, a woman told me to check her balance so I pushed her over." },
             {"Did you hear about the two silk worms in a race? It ended in a tie" },
-            {"Last time I stole a calendar, I got 12 months" },
-            {"" }
+            {"Last time I stole a calendar, I got 12 months" }
         };
     }
 }

@@ -1,62 +1,142 @@
-﻿using System;
+using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace scriptcoin
 {
-    public class Miner
+    class Mining
     {
-        //MULTITHREADING CONTROL 
-        public static void Hasher()
+        public static List<Miner> Miners { get; set; } = new List<Miner>();
+
+        public static int MineCount = 0;
+
+        public static void MineStart()
         {
-            int coreCount = (Environment.ProcessorCount - 1);
-                                    
-            for (int i = 1; i <= coreCount; i++)
-            {
-                int iCopy = i;
-                Thread thread = new Thread(Hashing);
-                thread.Name = "Thread - " + iCopy.ToString();
-                thread.Start();
-            }
-            
-            Miner.Hashing();
+            // Initialize miner threads
+            Miner.InitializeAll();
+            Miner.StartAll();
+
+            Console.ReadKey();
+
+            Miner.StopAll();
+            Console.WriteLine("Mining has stopped. {0} mining threads were used.", Miners.Count());
+
+            Console.ReadKey();
         }
-        
-        //ACTUAL MINER
-        private static void Hashing()
+    }
+
+    class Miner
+    {
+        public Thread Thread { get; set; }
+        public bool IsActive { get; set; }
+
+        public Miner()
         {
-            Console.WriteLine("Please input your public key");
-            string userAddress = Console.ReadLine();
-            
-            string difficulty = "00000";
+            bool MinerExists = false;
+            if (Mining.Miners.Count() == 0)
+            {
+                Mining.Miners.Add(this);
+            }
+            else
+            {
+                for (int i = 0; i < Mining.Miners.Count(); i++)
+                {
+                    MinerExists = MinerExists || Mining.Miners[i] == this;
+
+                    if (MinerExists)
+                    {
+                        Mining.Miners[i].IsActive = false;
+                        return;
+                    }
+                    else
+                    {
+                        Mining.Miners.Add(this);
+                        return;
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// Initializes a certain number of miners
+        /// </summary>
+        /// <param name="number">Number of miners to initialize</param>
+        public static void BatchInitialize(int number)
+        {
+            // Cap active miners at the number of logical cores minus 1
+            number = Math.Min(number, Environment.ProcessorCount - 1 - Mining.Miners.Count());
+
+            // Initialize miners
+            for (int i = 0; i < number; i++)
+            {
+                Miner miner = new Miner();
+            }
+        }
+
+        public void Mine()
+        {
 
             Random rnd = new Random();
+            byte[] hashValue;
+            string Difficulty = "00000";
 
             while (true)
             {
-                start:
-                string seed = rnd.Next(10).ToString();
-                string hash = string.Empty;
+                string Reward = Blockchain.Reward();
 
-                byte[] blockTest = new byte[512];
-                byte[] tempData = Encoding.ASCII.GetBytes(seed);
+                string seed = rnd.Next().ToString();
 
-                SHA256 sha256 = new SHA256Managed();
-                blockTest = sha256.ComputeHash(tempData);
-                string Hash = Convert.ToBase64String(blockTest);
-                string testHash = Hash.Substring(0, difficulty.Length);
+                SHA256 sha256 = SHA256.Create();
+                hashValue = sha256.ComputeHash(Encoding.ASCII.GetBytes(seed));
+                string hash = Convert.ToBase64String(hashValue);
 
-                Console.WriteLine(Hash + userAddress + "=10");
-                /*
-                if (testHash == difficulty)
+                if (hash.Substring(0, (Difficulty.Length)) == Difficulty)
                 {
-                    Console.WriteLine(Hash + "=" + userAddress + "=10");
+                    Console.WriteLine(hash + (DateTimeOffset.Now.ToUnixTimeSeconds().ToString()) + Reward);
                 }
-                */
-                goto start;                 
-            }            
+            }
+        }
+
+        public static void StartAll() => BatchStart(Mining.Miners.Count());
+        public static void InitializeAll() => BatchInitialize(Environment.ProcessorCount - 1);
+        public static void StopAll() => BatchStop(Mining.Miners.Count());
+
+        public static void BatchStart(int number)
+        {
+            number = Math.Min(number, Mining.Miners.Count());
+
+            int i = 0;
+            foreach (var miner in Mining.Miners)
+            {
+                if (!(i < number)) break;
+
+                if (!miner.IsActive)
+                {
+                    miner.Thread = new Thread(new ThreadStart(miner.Mine));
+                    miner.Thread.Start();
+                    miner.IsActive = true;
+                }
+            }
+        }
+
+        public static void BatchStop(int number)
+        {
+            number = Math.Min(number, Mining.Miners.Count());
+
+            int i = 0;
+            foreach (var miner in Mining.Miners)
+            {
+                if (!(i < number)) break;
+
+                if (miner.Thread.IsAlive)
+                {
+                    miner.Thread.Abort();
+                }
+            }
         }
     }
 }
-

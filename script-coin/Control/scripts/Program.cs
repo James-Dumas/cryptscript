@@ -29,6 +29,8 @@ namespace scriptcoin
 
         public static void Main()
         {
+            Blockchain.Connect();
+
             // Display version number
             Util.WriteLineColor("ScriptCoin " + Version, ConsoleColor.Cyan);
 
@@ -36,7 +38,7 @@ namespace scriptcoin
             Directory.CreateDirectory(LocalNodeDir);
             if (!File.Exists(LocalNodePath))
                 File.Create(LocalNodePath);
-
+                        
             while(!Quit)
             {
                 // Get user input
