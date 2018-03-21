@@ -17,7 +17,7 @@ namespace CryptScript
             string msg = "";
             if(LineNumber > 0)
             {
-                msg += System.String.Format("{0} on line {1}:", Type, LineNumber);
+                msg += System.String.Format("{0} on line {1}", Type, LineNumber);
             }
             else
             {

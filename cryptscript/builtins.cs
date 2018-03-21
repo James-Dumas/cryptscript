@@ -25,6 +25,11 @@ namespace CryptScript
 
         public IObject Call(List<IObject> args)
         {
+            if(Interpreter.StopExecution)
+            {
+                return null;
+            }
+
             IObject result = new Zilch();
 
             switch(RoutineName)
@@ -49,7 +54,7 @@ namespace CryptScript
                             break;
 
                         case 1:
-                            Console.WriteLine(args[0].Value.ToString());
+                            Console.WriteLine(args[0].ToString());
                             break;
                         
                         default:
@@ -66,7 +71,6 @@ namespace CryptScript
                     }
                     else
                     {
-                        Console.WriteLine();
                         if(args.Count == 1)
                         {
                             Console.Write(args[0].Value.ToString());
@@ -169,6 +173,11 @@ namespace CryptScript
             }
 
             return result;
+        }
+
+        public override string ToString()
+        {
+            return "<built-in routine>";
         }
     }
 

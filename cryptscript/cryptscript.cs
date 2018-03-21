@@ -36,8 +36,14 @@ namespace CryptScript
                         IObject result = parser.Parse(lexer.Tokenize(), false);
                         if(result != null)
                         {
-                            Console.WriteLine(result.Value.ToString());
+                            Console.WriteLine(result.ToString());
                         }
+                    }
+
+                    if(ErrorMsg != null)
+                    {
+                        Console.WriteLine(ErrorMsg);
+                        ErrorMsg = null;
                     }
                 }
             }
@@ -60,6 +66,7 @@ namespace CryptScript
                 string[] lines = File.ReadAllLines(filepath);
                 foreach(string line in lines)
                 {
+                    LineNumber++;
                     string code = line.Trim();
                     if(code.Length > 0)
                     {
@@ -69,12 +76,22 @@ namespace CryptScript
 
                     if(StopExecution) { break; }
                 }
-            }
 
-            if(ErrorMsg != null)
-            {
-                Console.WriteLine(ErrorMsg);
+                if(ErrorMsg != null)
+                {
+                    Console.WriteLine(ErrorMsg);
+                }
             }
         }
+
+        public static void ThrowError(Error e)
+        {
+            ErrorMsg = (string) e.Value;
+            if(!IsInteractive)
+            {
+                StopExecution = true;
+            }
+        }
+
     }
 }

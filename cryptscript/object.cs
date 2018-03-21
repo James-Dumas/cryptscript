@@ -16,6 +16,11 @@ namespace CryptScript
         {
             Value = Convert.ToInt32(value);
         }
+
+        public override string ToString()
+        {
+            return Value.ToString();
+        }
     }
 
     public class Decimal : IObject
@@ -25,6 +30,11 @@ namespace CryptScript
         public Decimal(object value)
         {
             Value = Convert.ToDouble(value);
+        }
+
+        public override string ToString()
+        {
+            return Value.ToString();
         }
     }
 
@@ -36,6 +46,11 @@ namespace CryptScript
         {
             Value = Convert.ToString(value);
         }
+
+        public override string ToString()
+        {
+            return Value.ToString();
+        }
     }
 
     public class Boolean : IObject
@@ -46,10 +61,20 @@ namespace CryptScript
         {
             Value = Convert.ToBoolean(value);
         }
+
+        public override string ToString()
+        {
+            return Value.ToString();
+        }
     }
 
     public class Zilch : IObject
     {
         public object Value { get; } = "Zilch";
+
+        public override string ToString()
+        {
+            return Value.ToString();
+        }
     }
 }

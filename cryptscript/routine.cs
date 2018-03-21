@@ -21,6 +21,11 @@ namespace CryptScript
 
         public IObject Call(List<IObject> args)
         {
+            if(Interpreter.StopExecution)
+            {
+                return null;
+            }
+
             if(args.Count > Arguments.Count)
             {
                 return new Error(ErrorType.ArgumentError);
@@ -51,6 +56,11 @@ namespace CryptScript
             }
 
             return result;
+        }
+
+        public override string ToString()
+        {
+            return "<user-defined routine>";
         }
     }
 }

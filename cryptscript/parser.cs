@@ -23,7 +23,8 @@ namespace CryptScript
                 // check for unknown tokens
                 if(tokens[i].Type == TokenType.Unknown)
                 {
-                    return new Error(ErrorType.UnknownTokenError);
+                    Interpreter.ThrowError(new Error(ErrorType.UnknownTokenError));
+                    return null;
                 }
 
                 // remove comments
@@ -126,8 +127,10 @@ namespace CryptScript
 
             if(result is Error)
             {
-                ThrowError((Error) result);
+                Interpreter.ThrowError((Error) result);
+                return null;
             }
+
             return result;
         }
 
@@ -144,10 +147,43 @@ namespace CryptScript
             */
             // DEBUG
 
+            if(Interpreter.StopExecution)
+            {
+                return new BaseExpression(null);
+            }
+
             while(expression.Count > 0 && expression[0].Type == TokenType.LeftParenthesis && expression[expression.Count - 1].Type == TokenType.RightParenthesis)
             {
                 // remove parentheses around expression
-                expression = expression.GetRange(1, expression.Count - 2);
+                bool hasSurroundingParens = true;
+                int numParens = 0;
+                foreach(Token t in expression.GetRange(1, expression.Count - 2))
+                {
+                    if(t.Type == TokenType.LeftParenthesis)
+                    {
+                        numParens++;
+                    }
+                    if(t.Type == TokenType.RightParenthesis)
+                    {
+                        if(numParens > 0)
+                        {
+                            numParens--;
+                        }
+                        else
+                        {
+                            hasSurroundingParens = false;
+                        }
+                    }
+                }
+
+                if(hasSurroundingParens)
+                {
+                    expression = expression.GetRange(1, expression.Count - 2);
+                }
+                else
+                {
+                    break;
+                }
             }
 
             for(int i = 0; i < expression.Count - 2; i++)
@@ -192,7 +228,13 @@ namespace CryptScript
                         {
                             foreach(List<Token> argExpression in ParseCommaSyntax(expression.GetRange(i+2, parenEnd - i - 2)))
                             {
-                                args.Add(EvaluateExpression(argExpression).Result());
+                                IObject arg = EvaluateExpression(argExpression).Result();
+                                if(arg is Error)
+                                {
+                                    Interpreter.ThrowError((Error) arg);
+                                    return new BaseExpression(null);
+                                }
+                                args.Add(arg);
                             }
                         }
 
@@ -296,17 +338,24 @@ namespace CryptScript
                     }
 
                     IExpression result;
-                    if(expression[index].Type == TokenType.NOT)
+                    if(index >= 0)
                     {
-                        result = new Expression(EvaluateExpression(expression.GetRange(index + 1, expression.Count - index - 1)),
-                                              new BaseExpression(new Zilch()),
-                                              OperationType.NOT);
+                        if(expression[index].Type == TokenType.NOT)
+                        {
+                            result = new Expression(EvaluateExpression(expression.GetRange(index + 1, expression.Count - index - 1)),
+                                                new BaseExpression(new Zilch()),
+                                                OperationType.NOT);
+                        }
+                        else
+                        {
+                            result = new Expression(EvaluateExpression(expression.GetRange(0, index)),
+                                                EvaluateExpression(expression.GetRange(index + 1, expression.Count - index - 1)),
+                                                Token.OperationOf[expression[index].Type]);
+                        }
                     }
                     else
                     {
-                        result = new Expression(EvaluateExpression(expression.GetRange(0, index)),
-                                              EvaluateExpression(expression.GetRange(index + 1, expression.Count - index - 1)),
-                                              Token.OperationOf[expression[index].Type]);
+                        result = new BaseExpression(null);
                     }
 
                     int num = 0;
@@ -319,12 +368,6 @@ namespace CryptScript
                     return result;
 
             }
-        }
-
-        public static void ThrowError(Error e)
-        {
-            Interpreter.StopExecution = true;
-            Interpreter.ErrorMsg = (string) e.Value;
         }
 
         public static List<List<Token>> ParseCommaSyntax(List<Token> expression)
