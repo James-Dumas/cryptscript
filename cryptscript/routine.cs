@@ -28,7 +28,7 @@ namespace cryptscript
 
             if(args.Count > Arguments.Count)
             {
-                return new Error(ErrorType.InvalidArguementException);
+                return new Error(ErrorType.InvalidArgumentError);
             }
 
             // add arguments to local id group
@@ -36,7 +36,7 @@ namespace cryptscript
             for(int i = 0; i < Arguments.Count; i++)
             {
                 locals.AddID(Arguments[i]);
-                if(args.Count >= i - 1)
+                if(args.Count > i)
                 {
                     locals.SetReference(Arguments[i], args[i]);
                 }

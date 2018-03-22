@@ -37,7 +37,7 @@ namespace cryptscript
                 case BuiltInRoutine.Wallet:
                     if(args.Count > 0)
                     {
-                        result = new Error(ErrorType.InvalidArguementException);
+                        result = new Error(ErrorType.InvalidArgumentError);
                     }
                     else
                     {
@@ -58,7 +58,7 @@ namespace cryptscript
                             break;
                         
                         default:
-                            result = new Error(ErrorType.InvalidArguementException);
+                            result = new Error(ErrorType.InvalidArgumentError);
                             break;
                     }
 
@@ -67,7 +67,7 @@ namespace cryptscript
                 case BuiltInRoutine.Read:
                     if(args.Count > 1)
                     {
-                        result = new Error(ErrorType.InvalidArguementException);
+                        result = new Error(ErrorType.InvalidArgumentError);
                     }
                     else
                     {
@@ -84,11 +84,11 @@ namespace cryptscript
                 case BuiltInRoutine.Floor:
                     if(args.Count != 1)
                     {
-                        result = new Error(ErrorType.InvalidArguementException);
+                        result = new Error(ErrorType.InvalidArgumentError);
                     }
                     else if(!(args[0] is Integer || args[0] is Decimal))
                     {
-                        result = new Error(ErrorType.TypeMismatchException);
+                        result = new Error(ErrorType.TypeMismatchError);
                     }
                     else
                     {
@@ -100,11 +100,11 @@ namespace cryptscript
                 case BuiltInRoutine.Round:
                     if(args.Count != 1)
                     {
-                        result = new Error(ErrorType.InvalidArguementException);
+                        result = new Error(ErrorType.InvalidArgumentError);
                     }
                     else if(!(args[0] is Integer || args[0] is Decimal))
                     {
-                        result = new Error(ErrorType.TypeMismatchException);
+                        result = new Error(ErrorType.TypeMismatchError);
                     }
                     else
                     {
@@ -117,11 +117,11 @@ namespace cryptscript
                     double foo;
                     if(args.Count != 1)
                     {
-                        result = new Error(ErrorType.InvalidArguementException);
+                        result = new Error(ErrorType.InvalidArgumentError);
                     }
                     else if(!double.TryParse((string) args[0].Value, out foo))
                     {
-                        result = new Error(ErrorType.TypeMismatchException);
+                        result = new Error(ErrorType.TypeMismatchError);
                     }
                     else
                     {
@@ -133,7 +133,7 @@ namespace cryptscript
                 case BuiltInRoutine.String:
                     if(args.Count != 1)
                     {
-                        result = new Error(ErrorType.InvalidArguementException);
+                        result = new Error(ErrorType.InvalidArgumentError);
                     }
                     else
                     {
@@ -142,14 +142,66 @@ namespace cryptscript
 
                     break;
 
-                case BuiltInRoutine.Length:
+                case BuiltInRoutine.Strip:
                     if(args.Count != 1)
                     {
-                        result = new Error(ErrorType.InvalidArguementException);
+                        result = new Error(ErrorType.InvalidArgumentError);
                     }
                     else if(!(args[0] is String))
                     {
-                        result = new Error(ErrorType.TypeMismatchException);
+                        result = new Error(ErrorType.TypeMismatchError);
+                    }
+                    else
+                    {
+                        result = new String(((string) args[0].Value).Trim());
+                    }
+
+                    break;
+
+                case BuiltInRoutine.Slice:
+                    if(args.Count != 3)
+                    {
+                        result = new Error(ErrorType.InvalidArgumentError);
+                    }
+                    else if(!(args[0] is String) || !(args[1] is Integer) || !(args[2] is Integer))
+                    {
+                        result = new Error(ErrorType.TypeMismatchError);
+                    }
+                    else 
+                    {
+                        string str = (string) args[0].Value;
+                        int index1 = (int) args[1].Value;
+                        int index2 = (int) args[2].Value;
+                        if(index1 >= str.Length || index1 < str.Length * -1 || index2 >= str.Length + 1 || index2 < str.Length * -1 - 1)
+                        {
+                            result = new Error(ErrorType.IndexOutOfBoundsError);
+                        }
+                        else
+                        {
+                            // convert negative indices to positive
+                            index1 = index1 < 0 ? str.Length + index1 : index1;
+                            index2 = index2 < 0 ? str.Length + index2 : index2;
+                            if(index2 <= index1)
+                            {
+                                result = new Error(ErrorType.IndexOutOfBoundsError);
+                            }
+                            else
+                            {
+                                result = new String(str.Substring(index1, index2));
+                            }
+                        }
+                    }
+
+                    break;
+
+                case BuiltInRoutine.Length:
+                    if(args.Count != 1)
+                    {
+                        result = new Error(ErrorType.InvalidArgumentError);
+                    }
+                    else if(!(args[0] is String))
+                    {
+                        result = new Error(ErrorType.TypeMismatchError);
                     }
                     else
                     {
@@ -161,7 +213,7 @@ namespace cryptscript
                 case BuiltInRoutine.Exit:
                     if(args.Count > 0)
                     {
-                        result = new Error(ErrorType.InvalidArguementException);
+                        result = new Error(ErrorType.InvalidArgumentError);
                     }
                     else
                     {
@@ -190,6 +242,8 @@ namespace cryptscript
         Round,
         Number,
         String,
+        Strip,
+        Slice,
         Length,
         Exit
     }

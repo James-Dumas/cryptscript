@@ -30,12 +30,13 @@ namespace cryptscript
 
     public enum ErrorType
     {
-        InvalidSyntaxException,
-        TokenNotFoundException,
-        TypeMismatchException,
-        DivisionByZeroException,
-        InvalidArguementException,
-        IdNotFoundException,
-        WalletNotFoundException
+        SyntaxError,
+        TokenNotFoundError,
+        TypeMismatchError,
+        DivisionByZeroError,
+        InvalidArgumentError,
+        IndexOutOfBoundsError,
+        IdNotFoundError,
+        WalletNotFoundError
     }
 }

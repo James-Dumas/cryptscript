@@ -26,7 +26,8 @@ namespace cryptscript
 
                 while(!StopExecution)
                 {
-                    string input = Util.GetInput(">>> ");
+                    string prompt = parser.parsingLoop || parser.parsingFunc ? "... " : ">>> ";
+                    string input = Util.GetInput(prompt);
 
                     if(input.Length > 0)
                     {

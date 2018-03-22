@@ -6,7 +6,11 @@ namespace cryptscript
     public class Parser
     {
         private IdentifierGroup IDs { get; set; }
-        private bool inLoop { get; set; } = false;
+        public bool parsingLoop { get; set; } = false;
+        public bool parsingFunc { get; set; } = false;
+        private string routineName { get; set; }
+        private List<List<Token>> storedCode { get; set; }
+        private List<string> storedArgs { get; set; }
 
         public Parser(IdentifierGroup ids)
         {
@@ -23,7 +27,7 @@ namespace cryptscript
                 // check for unknown tokens
                 if(tokens[i].Type == TokenType.Unknown)
                 {
-                    Interpreter.ThrowError(new Error(ErrorType.TokenNotFoundException));
+                    Interpreter.ThrowError(new Error(ErrorType.TokenNotFoundError));
                     return null;
                 }
 
@@ -34,101 +38,122 @@ namespace cryptscript
                 }
             }
 
-            if(Interpreter.WalletAddr.Reference is Zilch)
+            if(parsingFunc)
             {
-                result = new Error(ErrorType.WalletNotFoundException);
-            }
-            else
-            {
-                // mine until you get a block
-                // NOTE: insert reference to miner here
-
-                if(tokens.Count > 0)
+                if(tokens[0].Type == TokenType.End)
                 {
-                    if(tokens.Count > 1 && tokens[0].Type == TokenType.ID && tokens[1].Type == TokenType.Set)
+                    if(tokens.Count > 1)
                     {
-                        // check for 'variable = expression' syntax
-
-                        IObject expressionResult = EvaluateExpression(tokens.GetRange(2, tokens.Count - 2)).Result(); 
-                        string IdName = tokens[0].Value;
-                        if(expressionResult is Error)
-                        {
-                            result = expressionResult;
-                        }
-                        else
-                        {
-                            IDs.SetReference(IdName, expressionResult);
-                        }
-                    }
-                    else if(tokens.Count > 3 && tokens[0].Type == TokenType.Func && tokens[1].Type == TokenType.ID && tokens[2].Type == TokenType.LeftParenthesis && tokens[tokens.Count - 1].Type == TokenType.RightParenthesis)
-                    {
-                        // check for function declaration
-                        List<string> args = new List<string>() {};
-                        if(tokens[3].Type != TokenType.RightParenthesis)
-                        {
-                            foreach(List<Token> arg in ParseCommaSyntax(tokens.GetRange(3, tokens.Count - 4)))
-                            {
-                                if(arg.Count > 1 || arg[0].Type != TokenType.ID)
-                                {
-                                    return new Error(ErrorType.InvalidSyntaxException);
-                                }
-
-                                args.Add(arg[0].Value);
-                            }
-                        }
-
-                        // NOTE: WIP code
-                        // TODO: allow function declaration by waiting for more tokenized lines of code
-                        //       and storing them until end token is found
-
-                        List<List<Token>> code = new List<List<Token>>();
-
-
-                        IDs.SetReference(tokens[1].Value, new Routine(code, args));
-                    }
-                    /*
-                    else if(tokens[0].Type == TokenType.If && tokens[tokens.Count - 1].Type == TokenType.Do)
-                    {
-                        // check for if statement
-
-                        if(Expression.ToBool(EvaluateExpression(tokens.GetRange(1, tokens.Count - 2)).Result()))
-                        {
-
-                        }
-                        else
-                        {
-
-                        }
-                    }
-                    */
-                    else if(tokens.Count > 1 && tokens[0].Type == TokenType.Return && inFunc)
-                    {
-                        // check for return keyword
-                        result = EvaluateExpression(tokens.GetRange(1, tokens.Count - 1)).Result();
+                        Interpreter.ThrowError(new Error(ErrorType.SyntaxError));
                     }
                     else
                     {
-                        result = EvaluateExpression(tokens).Result();
-                        // if in a function, still evaluate but don't return the result
-                        if(inFunc)
+                        parsingFunc = false;
+                        IDs.SetReference(routineName, new Routine(storedCode, storedArgs));
+                    }
+                }
+                else
+                {
+                    storedCode.Add(tokens);
+                }
+            }
+            else
+            {
+                if(Interpreter.WalletAddr.Reference is Zilch)
+                {
+                    result = new Error(ErrorType.WalletNotFoundError);
+                }
+                else
+                {
+                    // mine until you get a block
+                    // NOTE: insert reference to miner here
+
+                    if(tokens.Count > 0)
+                    {
+                        if(tokens.Count > 1 && tokens[0].Type == TokenType.ID && tokens[1].Type == TokenType.Set)
                         {
-                            result = null;
+                            // check for 'variable = expression' syntax
+
+                            IObject expressionResult = EvaluateExpression(tokens.GetRange(2, tokens.Count - 2)).Result(); 
+                            string IdName = tokens[0].Value;
+                            if(expressionResult is Error)
+                            {
+                                result = expressionResult;
+                            }
+                            else
+                            {
+                                IDs.SetReference(IdName, expressionResult);
+                            }
+                        }
+                        else if(tokens.Count > 3 && tokens[0].Type == TokenType.Func && tokens[1].Type == TokenType.ID && tokens[2].Type == TokenType.LeftParenthesis && tokens[tokens.Count - 1].Type == TokenType.RightParenthesis)
+                        {
+                            // check for function declaration
+                            storedArgs = new List<string>() {};
+                            if(tokens[3].Type != TokenType.RightParenthesis)
+                            {
+                                foreach(List<Token> arg in ParseCommaSyntax(tokens.GetRange(3, tokens.Count - 4)))
+                                {
+                                    if(arg.Count > 1 || arg[0].Type != TokenType.ID)
+                                    {
+                                        return new Error(ErrorType.SyntaxError);
+                                    }
+
+                                    storedArgs.Add(arg[0].Value);
+                                }
+                            }
+
+                            // NOTE: WIP code
+                            // TODO: allow function declaration by waiting for more tokenized lines of code
+                            //       and storing them until end token is found
+
+                            routineName = tokens[1].Value;
+                            storedCode = new List<List<Token>>();
+                            parsingFunc = true;
+                        }
+                        /*
+                        else if(tokens[0].Type == TokenType.If && tokens[tokens.Count - 1].Type == TokenType.Do)
+                        {
+                            // check for if statement
+
+                            if(Expression.ToBool(EvaluateExpression(tokens.GetRange(1, tokens.Count - 2)).Result()))
+                            {
+
+                            }
+                            else
+                            {
+
+                            }
+                        }
+                        */
+                        else if(tokens.Count > 1 && tokens[0].Type == TokenType.Return && inFunc)
+                        {
+                            // check for return keyword
+                            result = EvaluateExpression(tokens.GetRange(1, tokens.Count - 1)).Result();
+                        }
+                        else
+                        {
+                            result = EvaluateExpression(tokens).Result();
+                            // if in a function, still evaluate but don't return the result
+                            if(inFunc)
+                            {
+                                result = null;
+                            }
                         }
                     }
                 }
-            }
 
-            if(tokens[0].Type == TokenType.Wallet)
-            {
-                // check for wallet address
-                Interpreter.WalletAddr.Reference = new String(tokens[0].Value);
-                result = null;
-            }
+                if(tokens[0].Type == TokenType.Wallet)
+                {
+                    // check for wallet address
+                    Interpreter.WalletAddr.Reference = new String(tokens[0].Value);
+                    result = null;
+                }
 
-            if(result is Error)
-            {
-                Interpreter.ThrowError((Error) result);
-                return null;
+                if(result is Error)
+                {
+                    Interpreter.ThrowError((Error) result);
+                    return null;
+                }
             }
 
             return result;
@@ -214,7 +239,7 @@ namespace cryptscript
                         parenEnd++;
                         if(parenEnd >= expression.Count)
                         {
-                            return new Expression(new Error(ErrorType.InvalidSyntaxException));
+                            return new Expression(new Error(ErrorType.SyntaxError));
                         }
                     }
 
@@ -250,7 +275,7 @@ namespace cryptscript
                     }
                     else
                     {
-                        return new Expression(new Error(ErrorType.IdNotFoundException));
+                        return new Expression(new Error(ErrorType.IdNotFoundError));
                     }
                 }
             }
@@ -258,7 +283,7 @@ namespace cryptscript
             switch(expression.Count)
             {
                 case 0:
-                    return new Expression(new Error(ErrorType.InvalidSyntaxException));
+                    return new Expression(new Error(ErrorType.SyntaxError));
 
                 case 1:
                     return new Expression(CreateFromToken(expression[0]));
@@ -277,14 +302,14 @@ namespace cryptscript
                                                   OperationType.NOT);
 
                         default:
-                            return new Expression(new Error(ErrorType.InvalidSyntaxException));
+                            return new Expression(new Error(ErrorType.SyntaxError));
 
                     }
                 
                 case 3:
                     if(!Token.OperationOf.ContainsKey(expression[1].Type))
                     {
-                        return new Expression(new Error(ErrorType.InvalidSyntaxException));
+                        return new Expression(new Error(ErrorType.SyntaxError));
                     }
                     else
                     {
@@ -388,7 +413,7 @@ namespace cryptscript
 
         public IObject CreateFromToken(Token t)
         {
-            IObject result = new Error(ErrorType.InvalidSyntaxException);
+            IObject result = new Error(ErrorType.SyntaxError);
 
             switch(t.Type)
             {

@@ -89,13 +89,13 @@ namespace cryptscript
                     && !(new List<OperationType> {OperationType.Addition, OperationType.Equal, OperationType.Inequal, OperationType.NOT,
                                                   OperationType.AND, OperationType.OR, OperationType.XOR}.Contains(Operation)))
             {
-                return new Error(ErrorType.TypeMismatchException);
+                return new Error(ErrorType.TypeMismatchError);
             }
             else if((Left is Zilch || Right is Zilch)
                     && !(new List<OperationType> {OperationType.Equal, OperationType.Inequal, OperationType.NOT,
                                             OperationType.AND, OperationType.OR, OperationType.XOR}.Contains(Operation)))
             {
-                return new Error(ErrorType.TypeMismatchException);
+                return new Error(ErrorType.TypeMismatchError);
             }
 
             bool returnDecimal = Left is Decimal || Right is Decimal;
@@ -107,7 +107,7 @@ namespace cryptscript
 
                     // Check for a type mismatch
                     if (!(Left is String) && Right is String)
-                        return new Error(ErrorType.TypeMismatchException);
+                        return new Error(ErrorType.TypeMismatchError);
 
                     // Return either a concatenated or an added number
                     result = Left is String
@@ -144,7 +144,7 @@ namespace cryptscript
                     }
                     catch(System.DivideByZeroException)
                     {
-                        return new Error(ErrorType.DivisionByZeroException);
+                        return new Error(ErrorType.DivisionByZeroError);
                     }
 
                     break;
@@ -158,7 +158,7 @@ namespace cryptscript
                     }
                     catch(System.DivideByZeroException)
                     {
-                        return new Error(ErrorType.DivisionByZeroException);
+                        return new Error(ErrorType.DivisionByZeroError);
                     }
 
                     break;
