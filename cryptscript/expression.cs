@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace CryptScript
+namespace cryptscript
 {
     public interface IExpression
     {
@@ -10,107 +10,141 @@ namespace CryptScript
 
     public class Expression : IExpression
     {
-        private IExpression Value1 { get; set ;}
-        private IExpression Value2 { get; set; }
+        #region Operation Data
+
+        /// <summary>
+        /// The left value of the expression
+        /// </summary>
+        private IObject Left { get; set; }
+
+        /// <summary>
+        /// The right value of the expression
+        /// </summary>
+        private IObject Right { get; set; }
+
+        /// <summary>
+        /// The type of operation to perform
+        /// </summary>
         private OperationType Operation { get; set; }
 
-        public Expression(IExpression value1, IExpression value2, OperationType operation)
+        private bool IsBaseExpression => Operation == OperationType.None;
+
+        #endregion
+
+        #region Constructors
+
+        /// <summary>
+        /// Initializes a new one-value expression
+        /// </summary>
+        /// <param name="value">The value to operate on</param>
+        /// <param name="operation">The type of operation to perform</param>
+        public Expression(IExpression value)
+            : this(value, value, OperationType.None) { }
+
+        public Expression(IObject value)
         {
-            Value1 = value1;
-            Value2 = value2;
+            Left = value;
+            Right = value;
+            Operation = OperationType.None;
+        }
+
+        /// <summary>
+        /// Initializes a new two-value expression
+        /// </summary>
+        /// <param name="left">The left value</param>
+        /// <param name="right">The right value</param>
+        /// <param name="operation">The type of operation to perform</param>
+        public Expression(IExpression left, IExpression right, OperationType operation)
+        {
+            Left = left.Result();
+            Right = right.Result();
             Operation = operation;
         }
 
+        #endregion
+
+        /// <summary>
+        /// Gets the result of this expression by operating on two child expressions
+        /// </summary>
         public IObject Result()
         {
+            // Check if the expression is a base expression
+            if (IsBaseExpression)
+            {
+                // Check if Left is a natural decimal number
+                if (Left is Decimal && (double)Left.Value % 1 == 0)
+                    return new Integer(Left.Value);   
+
+                // Otherwise just return Left
+                return Left;
+            }
+
             object result = null;
 
-            IObject obj1 = Value1.Result();
-            IObject obj2 = Value2.Result();
+            // If an error has occured, pass it up the stack
+            if (Left is Error) return Left;
+            if (Right is Error) return Right;
 
-            if(obj1 is Error)
-            {
-                return obj1;
-            }
-            if(obj2 is Error)
-            {
-                return obj2;
-            }
-
-            if((obj1 is String || obj2 is String)
+            if((Left is String || Right is String)
                     && !(new List<OperationType> {OperationType.Addition, OperationType.Equal, OperationType.Inequal, OperationType.NOT,
                                                   OperationType.AND, OperationType.OR, OperationType.XOR}.Contains(Operation)))
             {
-                return new Error(ErrorType.TypeMismatchError);
+                return new Error(ErrorType.TypeMismatchException);
             }
-            else if((obj1 is Zilch || obj2 is Zilch)
+            else if((Left is Zilch || Right is Zilch)
                     && !(new List<OperationType> {OperationType.Equal, OperationType.Inequal, OperationType.NOT,
                                             OperationType.AND, OperationType.OR, OperationType.XOR}.Contains(Operation)))
             {
-                return new Error(ErrorType.TypeMismatchError);
+                return new Error(ErrorType.TypeMismatchException);
             }
 
-            bool returnDecimal = obj1 is Decimal || obj2 is Decimal;
+            bool returnDecimal = Left is Decimal || Right is Decimal;
 
             // Perform the operation
             switch (Operation)
             {
                 case OperationType.Addition:
-                    if(obj1 is String)
-                    {
-                        result = obj1.Value.ToString() + obj2.Value.ToString();
-                    }
-                    else if(obj2 is String)
-                    {
-                        return new Error(ErrorType.TypeMismatchError);
-                    }
-                    else if(returnDecimal)
-                    {
-                        result = ToDouble(obj1) + ToDouble(obj2);
-                    }
-                    else
-                    {
-                        result = ToInt(obj1) + ToInt(obj2);
-                    }
 
-                    // result = obj1 is String
-                    //     ? obj1.Value.ToString() + obj2.Value.ToString()
-                    //     : returnDecimal
-                    //         ? ToDouble(obj1) + ToDouble(obj2)
-                    //         : ToInt(obj1) + ToInt(obj2);
+                    // Check for a type mismatch
+                    if (!(Left is String) && Right is String)
+                        return new Error(ErrorType.TypeMismatchException);
 
-                    // this ternary gives an error for some reason even though it should be the same?
-
+                    // Return either a concatenated or an added number
+                    result = Left is String
+                        ? (object)(Left.Value.ToString() + Right.Value.ToString())
+                        : returnDecimal
+                            ? ToDouble(Left) + ToDouble(Right)
+                            : ToInt(Left) + ToInt(Right);
                     break;
 
                 case OperationType.Subraction:
                     result = returnDecimal
-                        ? ToDouble(obj1) - ToDouble(obj2)
-                        : ToInt(obj1) - ToInt(obj2);
+                        ? ToDouble(Left) - ToDouble(Right)
+                        : ToInt(Left) - ToInt(Right);
                     break;
 
                 case OperationType.Multiplication:
                     result = returnDecimal
-                        ? ToDouble(obj1) * ToDouble(obj2)
-                        : ToInt(obj1) * ToInt(obj2);
+                        ? ToDouble(Left) * ToDouble(Right)
+                        : ToInt(Left) * ToInt(Right);
                     break;
 
                 case OperationType.Division:
                     try
                     {
-                        // only allow integer return type when the numbers divide evenly
-                        if(!returnDecimal && ToInt(obj1) % ToInt(obj2) != 0)
+                        // Only allow integer return type when the numbers divide evenly
+                        if(!returnDecimal && ToInt(Left) % ToInt(Right) != 0)
                         {
                             returnDecimal = true;
                         }
 
                         result = returnDecimal
-                            ? ToDouble(obj1) / ToDouble(obj2)
-                            : ToInt(obj1) / ToInt(obj2);
+                            ? ToDouble(Left) / ToDouble(Right)
+                            : ToInt(Left) / ToInt(Right);
                     }
                     catch(System.DivideByZeroException)
                     {
-                        return new Error(ErrorType.DivideByZeroError);
+                        return new Error(ErrorType.DivisionByZeroException);
                     }
 
                     break;
@@ -119,158 +153,138 @@ namespace CryptScript
                     try
                     {
                         result = returnDecimal
-                            ? ToDouble(obj1) % ToDouble(obj2)
-                            : ToInt(obj1) % ToInt(obj2);
+                            ? ToDouble(Left) % ToDouble(Right)
+                            : ToInt(Left) % ToInt(Right);
                     }
                     catch(System.DivideByZeroException)
                     {
-                        return new Error(ErrorType.DivideByZeroError);
+                        return new Error(ErrorType.DivisionByZeroException);
                     }
 
                     break;
 
                 case OperationType.Exponent:
-                    returnDecimal = returnDecimal || ToDouble(obj2) < 0;
+                    returnDecimal = returnDecimal || ToDouble(Right) < 0;
 
                     result = returnDecimal
-                        ? Math.Pow(ToDouble(obj1), ToDouble(obj2))
-                        : Math.Pow(ToInt(obj1), ToInt(obj2));
+                        ? Math.Pow(ToDouble(Left), ToDouble(Right))
+                        : Math.Pow(ToInt(Left), ToInt(Right));
                     break;
 
                 case OperationType.AND:
-                    result = ToBool(obj1) && ToBool(obj2);
+                    result = ToBool(Left) && ToBool(Right);
                     break;
                     
                 case OperationType.OR:
-                    result = ToBool(obj1) || ToBool(obj2);
+                    result = ToBool(Left) || ToBool(Right);
                     break;
 
                 case OperationType.XOR:
-                    result = ToBool(obj1) && !ToBool(obj2) || (!ToBool(obj1) && ToBool(obj2));
+                    result = ToBool(Left) && !ToBool(Right) || (!ToBool(Left) && ToBool(Right));
                     break;
                     
                 case OperationType.NOT:
-                    result = !ToBool(obj1);
+                    result = !ToBool(Left);
                     break;
 
                 case OperationType.Equal:
-                    result = Equal(obj1, obj2);
+                    result = Equals(Left, Right);
                     break;
                 
                 case OperationType.Inequal:
-                    result = !Equal(obj1, obj2);
+                    result = !Equals(Left, Right);
                     break;
                     
                 case OperationType.Greater:
-                    result = Greater(obj1, obj2);
+                    result = Greater(Left, Right);
                     break;
                     
                 case OperationType.Less:
-                    result = Less(obj1, obj2);
+                    result = Less(Left, Right);
                     break;
                     
                 case OperationType.GreaterEqual:
-                    result = !Less(obj1, obj2);
+                    result = !Less(Left, Right);
                     break;
                     
                 case OperationType.LessEqual:
-                    result = !Greater(obj1, obj2);
+                    result = !Greater(Left, Right);
                     break;
             }
 
             return Parser.CreateObject(result);
         }
 
+        /// <summary>
+        /// Converts the given object to a standard <seealso cref="double"/>
+        /// </summary>
+        /// <param name="x">The object to convert</param>
         public static double ToDouble(IObject x) =>
-            x is Boolean
+            Convert.ToDouble(x is Boolean
                 ? ToBool(x)
-                    ? 1.0
-                    : 0.0
-                : Convert.ToDouble(x.Value);
+                : x.Value);
 
+        /// <summary>
+        /// Converts the given object to a standard <seealso cref="int"/>
+        /// </summary>
+        /// <param name="x">The object to convert</param>
         public static int ToInt(IObject x) =>
-            x is Boolean
+            Convert.ToInt32(x is Boolean
                 ? ToBool(x)
-                    ? 1
-                    : 0
-                : Convert.ToInt32(x.Value);
+                : x.Value);
 
-        public static bool ToBool(IObject x) =>
-            x is Boolean
-                ? (bool) x.Value
-                : x is Integer
-                    ? ToInt(x) != 0
-                    : x is Decimal
-                        ? ToDouble(x) != 0.0
-                        : !(x is Zilch);
+        /// <summary>
+        /// Returns the boolean value of the given object
+        /// </summary>
+        /// <param name="obj">The object to convert into a boolean</param>
+        public static bool ToBool(IObject obj)
+        {
+            switch(obj)
+            {
+                case Boolean b: return (bool)b.Value;
+                case Integer i: return ToInt(i) != 0;
+                case Decimal d: return ToDouble(d) != 0;
+                default: return !(obj is Zilch);
+            }
+        }
 
-        private static bool Equal(IObject x, IObject y)
+        /// <summary>
+        /// Returns whether <paramref name="x"/> is equal to <paramref name="y"/>
+        /// </summary>
+        /// <param name="x">The first <seealso cref="IObject"/> to compare</param>
+        /// <param name="y">The second <seealso cref="IObject"/> to compare</param>
+        /// <returns></returns>
+        private static bool Equals(IObject x, IObject y)
         {
             if(x is Boolean || y is Boolean)
             {
                 return ToBool(x) == ToBool(y);
             }
-            else if((x is Zilch && !(y is Zilch)) || (!(x is Zilch) && y is Zilch))
-            {
-                return false;
-            }
-            else if(x.GetType() == y.GetType() || x is String || y is String)
+            if(x.GetType() == y.GetType() || x is String || y is String)
             {
                 return x.Value.ToString() == y.Value.ToString();
             }
-            else if((x is Decimal && y is Integer) || (x is Integer && y is Decimal))
+            if((x is Decimal && y is Integer) || (x is Integer && y is Decimal))
             {
                 return ToDouble(x) == ToDouble(y);
-            }
+            } 
 
             return false;
         }
 
-        private static bool Greater(IObject x, IObject y)
-        {
-            if(x is Decimal || y is Decimal)
-            {
-                return ToDouble(x) > ToDouble(y);
-            }
-            else
-            {
-                return ToInt(x) > ToInt(y);
-            }
-        }
+        /// <summary>
+        /// Returns whether <paramref name="x"/> is greater than <paramref name="y"/>
+        /// </summary>
+        /// <param name="x">The first <seealso cref="IObject"/> to compare</param>
+        /// <param name="y">The second <seealso cref="IObject"/> to compare</param>
+        private static bool Greater(IObject x, IObject y) => ToDouble(x) > ToDouble(y);
 
-        private static bool Less(IObject x, IObject y)
-        {
-            if(x is Decimal || y is Decimal)
-            {
-                return ToDouble(x) < ToDouble(y);
-            }
-            else
-            {
-                return ToInt(x) < ToInt(y);
-            }
-        }
-    }
-    
-    public class BaseExpression : IExpression
-    {
-        public IObject Value { get; set; }
-
-        public BaseExpression(IObject value)
-        {
-            Value = value;
-        }
-
-        public IObject Result()
-        {
-            if(Value is Decimal && (double) Value.Value % 1 == 0)
-            {
-                return new Integer(Value.Value);
-            }
-            else
-            {
-                return this.Value;
-            }
-        }
+        /// <summary>
+        /// Returns whether <paramref name="x"/> is less than <paramref name="y"/>
+        /// </summary>
+        /// <param name="x">The first <seealso cref="IObject"/> to compare</param>
+        /// <param name="y">The second <seealso cref="IObject"/> to compare</param>
+        private static bool Less(IObject x, IObject y) => ToDouble(x) < ToDouble(y);
     }
 
     /// <summary>
@@ -293,6 +307,7 @@ namespace CryptScript
         Greater,
         Less,
         GreaterEqual,
-        LessEqual
+        LessEqual,
+        None
     }
 }

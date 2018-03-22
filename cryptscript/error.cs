@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace CryptScript
+namespace cryptscript
 {
     public class Error : IObject
     {
@@ -30,12 +30,12 @@ namespace CryptScript
 
     public enum ErrorType
     {
-        SyntaxError,
-        UnknownTokenError,
-        TypeMismatchError,
-        DivideByZeroError,
-        ArgumentError,
-        IdNotCallableError,
-        NoWalletAddressError
+        InvalidSyntaxException,
+        TokenNotFoundException,
+        TypeMismatchException,
+        DivisionByZeroException,
+        InvalidArguementException,
+        IdNotFoundException,
+        WalletNotFoundException
     }
 }

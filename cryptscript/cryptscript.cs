@@ -1,7 +1,7 @@
 using System;
 using System.IO;
 
-namespace CryptScript
+namespace cryptscript
 {
     public class Interpreter
     {
@@ -26,9 +26,7 @@ namespace CryptScript
 
                 while(!StopExecution)
                 {
-                    Console.Write(">> ");
-
-                    string input = Console.ReadLine().Trim();
+                    string input = Util.GetInput(">>> ");
 
                     if(input.Length > 0)
                     {
@@ -42,7 +40,7 @@ namespace CryptScript
 
                     if(ErrorMsg != null)
                     {
-                        Console.WriteLine(ErrorMsg);
+                        Util.WriteColor(ErrorMsg, ConsoleColor.Red);
                         ErrorMsg = null;
                     }
                 }
@@ -79,7 +77,7 @@ namespace CryptScript
 
                 if(ErrorMsg != null)
                 {
-                    Console.WriteLine(ErrorMsg);
+                    Util.WriteColor(ErrorMsg, ConsoleColor.Red);
                 }
             }
         }
@@ -92,6 +90,5 @@ namespace CryptScript
                 StopExecution = true;
             }
         }
-
     }
 }

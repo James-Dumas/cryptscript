@@ -1,15 +1,10 @@
 using System.Collections.Generic;
 
-namespace CryptScript
+namespace cryptscript
 {
     public class Identifier
     {
-        public IObject Reference { get; set; }
-        
-        public Identifier()
-        {
-            Reference = new Zilch();
-        }
+        public IObject Reference { get; set; } = new Zilch();
     }
 
     public class IdentifierGroup

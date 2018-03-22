@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace CryptScript
+namespace cryptscript
 {
     public class Token
     {

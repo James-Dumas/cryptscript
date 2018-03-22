@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace CryptScript
+namespace cryptscript
 {
     public class Parser
     {
@@ -23,7 +23,7 @@ namespace CryptScript
                 // check for unknown tokens
                 if(tokens[i].Type == TokenType.Unknown)
                 {
-                    Interpreter.ThrowError(new Error(ErrorType.UnknownTokenError));
+                    Interpreter.ThrowError(new Error(ErrorType.TokenNotFoundException));
                     return null;
                 }
 
@@ -36,7 +36,7 @@ namespace CryptScript
 
             if(Interpreter.WalletAddr.Reference is Zilch)
             {
-                result = new Error(ErrorType.NoWalletAddressError);
+                result = new Error(ErrorType.WalletNotFoundException);
             }
             else
             {
@@ -70,7 +70,7 @@ namespace CryptScript
                             {
                                 if(arg.Count > 1 || arg[0].Type != TokenType.ID)
                                 {
-                                    return new Error(ErrorType.SyntaxError);
+                                    return new Error(ErrorType.InvalidSyntaxException);
                                 }
 
                                 args.Add(arg[0].Value);
@@ -149,7 +149,7 @@ namespace CryptScript
 
             if(Interpreter.StopExecution)
             {
-                return new BaseExpression(null);
+                return new Expression((IObject)null);
             }
 
             while(expression.Count > 0 && expression[0].Type == TokenType.LeftParenthesis && expression[expression.Count - 1].Type == TokenType.RightParenthesis)
@@ -214,7 +214,7 @@ namespace CryptScript
                         parenEnd++;
                         if(parenEnd >= expression.Count)
                         {
-                            return new BaseExpression(new Error(ErrorType.SyntaxError));
+                            return new Expression(new Error(ErrorType.InvalidSyntaxException));
                         }
                     }
 
@@ -232,7 +232,7 @@ namespace CryptScript
                                 if(arg is Error)
                                 {
                                     Interpreter.ThrowError((Error) arg);
-                                    return new BaseExpression(null);
+                                    return new Expression((IObject)null);
                                 }
                                 args.Add(arg);
                             }
@@ -250,7 +250,7 @@ namespace CryptScript
                     }
                     else
                     {
-                        return new BaseExpression(new Error(ErrorType.IdNotCallableError));
+                        return new Expression(new Error(ErrorType.IdNotFoundException));
                     }
                 }
             }
@@ -258,39 +258,39 @@ namespace CryptScript
             switch(expression.Count)
             {
                 case 0:
-                    return new BaseExpression(new Error(ErrorType.SyntaxError));
+                    return new Expression(new Error(ErrorType.InvalidSyntaxException));
 
                 case 1:
-                    return new BaseExpression(CreateFromToken(expression[0]));
+                    return new Expression(CreateFromToken(expression[0]));
                 
                 case 2:
                     switch(expression[0].Type)
                     {
                         case TokenType.Subraction:
-                            return new Expression(new BaseExpression(CreateObject(0)),
-                                                  new BaseExpression(CreateFromToken(expression[1])),
+                            return new Expression(new Expression(CreateObject(0)),
+                                                  new Expression(CreateFromToken(expression[1])),
                                                   OperationType.Subraction);
 
                         case TokenType.NOT:
-                            return new Expression(new BaseExpression(CreateFromToken(expression[1])),
-                                                  new BaseExpression(CreateFromToken(expression[1])),
+                            return new Expression(new Expression(CreateFromToken(expression[1])),
+                                                  new Expression(CreateFromToken(expression[1])),
                                                   OperationType.NOT);
 
                         default:
-                            return new BaseExpression(new Error(ErrorType.SyntaxError));
+                            return new Expression(new Error(ErrorType.InvalidSyntaxException));
 
                     }
                 
                 case 3:
                     if(!Token.OperationOf.ContainsKey(expression[1].Type))
                     {
-                        return new BaseExpression(new Error(ErrorType.SyntaxError));
+                        return new Expression(new Error(ErrorType.InvalidSyntaxException));
                     }
                     else
                     {
                         // perform operations that use two tokens
-                        return new Expression(new BaseExpression(CreateFromToken(expression[0])),
-                                              new BaseExpression(CreateFromToken(expression[2])),
+                        return new Expression(new Expression(CreateFromToken(expression[0])),
+                                              new Expression(CreateFromToken(expression[2])),
                                               Token.OperationOf[expression[1].Type]);
                     }
                 
@@ -343,7 +343,7 @@ namespace CryptScript
                         if(expression[index].Type == TokenType.NOT)
                         {
                             result = new Expression(EvaluateExpression(expression.GetRange(index + 1, expression.Count - index - 1)),
-                                                new BaseExpression(new Zilch()),
+                                                new Expression(new Zilch()),
                                                 OperationType.NOT);
                         }
                         else
@@ -355,7 +355,7 @@ namespace CryptScript
                     }
                     else
                     {
-                        result = new BaseExpression(null);
+                        result = new Expression((IObject)null);
                     }
 
                     int num = 0;
@@ -388,7 +388,7 @@ namespace CryptScript
 
         public IObject CreateFromToken(Token t)
         {
-            IObject result = new Error(ErrorType.SyntaxError);
+            IObject result = new Error(ErrorType.InvalidSyntaxException);
 
             switch(t.Type)
             {
@@ -424,6 +424,7 @@ namespace CryptScript
         {
             IObject result = new Zilch();
             Type t = value.GetType();
+
             if(value == null)
             {
                 result = new Zilch();

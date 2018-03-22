@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace CryptScript
+namespace cryptscript
 {
     public class BuiltIn : ICallable
     {
@@ -34,10 +34,10 @@ namespace CryptScript
 
             switch(RoutineName)
             {
-                case BuiltInRoutine.wallet:
+                case BuiltInRoutine.Wallet:
                     if(args.Count > 0)
                     {
-                        result = new Error(ErrorType.ArgumentError);
+                        result = new Error(ErrorType.InvalidArguementException);
                     }
                     else
                     {
@@ -46,7 +46,7 @@ namespace CryptScript
 
                     break;
 
-                case BuiltInRoutine.write:
+                case BuiltInRoutine.Write:
                     switch(args.Count)
                     {
                         case 0:
@@ -58,16 +58,16 @@ namespace CryptScript
                             break;
                         
                         default:
-                            result = new Error(ErrorType.ArgumentError);
+                            result = new Error(ErrorType.InvalidArguementException);
                             break;
                     }
 
                     break;
 
-                case BuiltInRoutine.read:
+                case BuiltInRoutine.Read:
                     if(args.Count > 1)
                     {
-                        result = new Error(ErrorType.ArgumentError);
+                        result = new Error(ErrorType.InvalidArguementException);
                     }
                     else
                     {
@@ -81,14 +81,14 @@ namespace CryptScript
 
                     break;
 
-                case BuiltInRoutine.floor:
+                case BuiltInRoutine.Floor:
                     if(args.Count != 1)
                     {
-                        result = new Error(ErrorType.ArgumentError);
+                        result = new Error(ErrorType.InvalidArguementException);
                     }
                     else if(!(args[0] is Integer || args[0] is Decimal))
                     {
-                        result = new Error(ErrorType.TypeMismatchError);
+                        result = new Error(ErrorType.TypeMismatchException);
                     }
                     else
                     {
@@ -97,14 +97,14 @@ namespace CryptScript
 
                     break;
 
-                case BuiltInRoutine.round:
+                case BuiltInRoutine.Round:
                     if(args.Count != 1)
                     {
-                        result = new Error(ErrorType.ArgumentError);
+                        result = new Error(ErrorType.InvalidArguementException);
                     }
                     else if(!(args[0] is Integer || args[0] is Decimal))
                     {
-                        result = new Error(ErrorType.TypeMismatchError);
+                        result = new Error(ErrorType.TypeMismatchException);
                     }
                     else
                     {
@@ -113,15 +113,15 @@ namespace CryptScript
 
                     break;
 
-                case BuiltInRoutine.number:
+                case BuiltInRoutine.Number:
                     double foo;
                     if(args.Count != 1)
                     {
-                        result = new Error(ErrorType.ArgumentError);
+                        result = new Error(ErrorType.InvalidArguementException);
                     }
                     else if(!double.TryParse((string) args[0].Value, out foo))
                     {
-                        result = new Error(ErrorType.TypeMismatchError);
+                        result = new Error(ErrorType.TypeMismatchException);
                     }
                     else
                     {
@@ -133,7 +133,7 @@ namespace CryptScript
                 case BuiltInRoutine.String:
                     if(args.Count != 1)
                     {
-                        result = new Error(ErrorType.ArgumentError);
+                        result = new Error(ErrorType.InvalidArguementException);
                     }
                     else
                     {
@@ -142,14 +142,14 @@ namespace CryptScript
 
                     break;
 
-                case BuiltInRoutine.length:
+                case BuiltInRoutine.Length:
                     if(args.Count != 1)
                     {
-                        result = new Error(ErrorType.ArgumentError);
+                        result = new Error(ErrorType.InvalidArguementException);
                     }
                     else if(!(args[0] is String))
                     {
-                        result = new Error(ErrorType.TypeMismatchError);
+                        result = new Error(ErrorType.TypeMismatchException);
                     }
                     else
                     {
@@ -158,10 +158,10 @@ namespace CryptScript
 
                     break;                    
 
-                case BuiltInRoutine.exit:
+                case BuiltInRoutine.Exit:
                     if(args.Count > 0)
                     {
-                        result = new Error(ErrorType.ArgumentError);
+                        result = new Error(ErrorType.InvalidArguementException);
                     }
                     else
                     {
@@ -183,14 +183,14 @@ namespace CryptScript
 
     public enum BuiltInRoutine
     {
-        wallet,
-        write,
-        read,
-        floor,
-        round,
-        number,
-        String, // capitalized because lowercase 'string' is a type; ToLower() method is used later for ID name
-        length,
-        exit
+        Wallet,
+        Write,
+        Read,
+        Floor,
+        Round,
+        Number,
+        String,
+        Length,
+        Exit
     }
 }

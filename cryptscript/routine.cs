@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 
-namespace CryptScript
+namespace cryptscript
 {
     public interface ICallable : IObject
     {
@@ -28,7 +28,7 @@ namespace CryptScript
 
             if(args.Count > Arguments.Count)
             {
-                return new Error(ErrorType.ArgumentError);
+                return new Error(ErrorType.InvalidArguementException);
             }
 
             // add arguments to local id group
