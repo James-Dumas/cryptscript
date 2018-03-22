@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 
 namespace CryptScript
@@ -8,30 +8,34 @@ namespace CryptScript
         public event InputHandler HandleInput;
         public delegate void InputHandler(string[] input, ref bool isHandled);
 
-        public List<string[]> Inputs = new List<string[]>();
+        public List<Tuple<string, string>> Commands;
+
+        public List<string[]> Inputs { get; set; } = new List<string[]>();
 
         public void Parse(string input)
         {
-            // Reset Inputs
+            // Don't attempt to parse if the input is empty
+            if (input.Trim() == "")
+                return;
+
+            // Get command segments
             Inputs = new List<string[]>();
+            string[] segments = input.Trim().Split(new string[] { "&&" }, new StringSplitOptions());
+            for(int i = 0; i < segments.Length; i++)
+            {
+                Inputs.Add(segments[i].Trim().Split(' '));
+            }
 
-            // Get individual command segments
-            string[] commands = input.Split(new string[] { "&&" }, new StringSplitOptions());
-
-            // Split each command segment into its primary command and its parameters
-            for(int i = 0; i < commands.Length; i++)
-                Inputs.Add(commands[i].Split(' '));
-
-            // Handle each command segment
-            foreach(string[] command in Inputs)
+            // Execute each command in sequence
+            foreach(string[] segment in Inputs)
             {
                 bool isHandled = false;
 
-                HandleInput?.Invoke(command, ref isHandled);
+                HandleInput?.Invoke(segment, ref isHandled);
 
-                if(!isHandled)
+                if (!isHandled)
                 {
-                    Console.WriteLine("Error: \"{0}\" is not a valid command.", command[0]);
+                    Alert.Error("\"" + segment[0] + "\" is not a valid command.");
                     break;
                 }
             }

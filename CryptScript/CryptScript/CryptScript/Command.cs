@@ -1,38 +1,39 @@
-﻿using System;
+using System;
+using System.Collections.Generic;
 
 namespace CryptScript
 {
     public class Command
     {
-        private static bool CheckIfValid(string[] command, string match, ref bool isHandled)
+        public string Name { get; set; }
+        public string Description { get; set; }
+        public UserInput.InputHandler Function { get; set; }
+
+        public Command(string name, string description, UserInput.InputHandler function)
         {
-            isHandled = !isHandled && command[0].ToLower() == match.ToLower();
-            return isHandled;
+            Name = name.ToLower();
+            Description = description;
+            Function = function;
+        }
+
+        #region Static Command Logic
+
+        public static bool CheckIfValid(string[] command, string match, ref bool isHandled)
+        {
+            // Check if the command matches the request
+            if (!isHandled && command[0].ToLower() == match.ToLower())
+            {
+                isHandled = true;
+                return true;
+            }
+
+            // Return false if the command doesn't match or if the request has already been handled
+            return false;
         }
 
         public static void Subscribe(UserInput input, UserInput.InputHandler handler) =>
             input.HandleInput += handler;
 
-        public static void SubscribeAll(UserInput input)
-        {
-            input.HandleInput += Clear;
-            input.HandleInput += Exit;
-        }
-
-        public static void Clear(string[] command, ref bool isHandled)
-        {
-            if(CheckIfValid(command, "clear", ref isHandled))
-            {
-                Console.Clear();
-            }
-        }
-
-        public static void Exit(string[] command, ref bool isHandled)
-        {
-            if(CheckIfValid(command, "exit", ref isHandled))
-            {
-                Program.IsRunning = false;
-            }
-        }
+        #endregion
     }
 }
