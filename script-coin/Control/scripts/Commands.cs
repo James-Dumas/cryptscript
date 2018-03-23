@@ -45,7 +45,7 @@ namespace scriptcoin
 
             // Print key pair
             Console.ForegroundColor = ConsoleColor.Green;
-            Console.WriteLine("Public key:  {0}", keys.Item1);
+            Console.WriteLine("public address:  {0}", keys.Item1);
             Console.WriteLine("Private Key: {0}", keys.Item2);
             Console.ForegroundColor = ConsoleColor.White;
         }
@@ -56,9 +56,9 @@ namespace scriptcoin
 
     public class Send : Command
     {
-        public override void Execute()
+        public override void Execute()            
         {
-            Console.Write("Enter your public key: ");
+            Console.Write("Enter your public address: ");
             string publicKey = Util.ReadLineColor(ConsoleColor.DarkGray);
             Console.Write("Enter your private key: ");
             string privateKey = Util.ReadLineColor(ConsoleColor.DarkGray);

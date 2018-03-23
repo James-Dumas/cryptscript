@@ -11,7 +11,7 @@ namespace scriptcoin
             string request = "ping";
             string reply = "pong";
             int nodesConnected = 0;
-
+            /*
             if (knownNodes.Length >= 5)
             {
                 for (nodesConnected = 0; nodesConnected <= 5;)
@@ -25,11 +25,12 @@ namespace scriptcoin
                     }
                 }
             }
+            */
         }
 
-        public static string Difficulty()
+        public static void Difficulty()
         {
-            string difficulty = "0;";
+            string difficulty = "000";
             /*
             long prevBlock = 152164899737;
             long currentBlock = DateTimeOffset.Now.ToUnixTimeSeconds();
@@ -48,17 +49,17 @@ namespace scriptcoin
                 }
             }
             */
-            return difficulty;
+            Miner.Difficulty = difficulty;
         }
         
-        public static string Reward()
+        public static void Reward()
         {
             double reward = 50;
             double blockNumber = 0;
             
             reward = ((blockNumber % (211680)) == 1 && blockNumber == 1 ? 50 : reward * 0.75);
 
-            return reward.ToString();
+            Miner.Reward =  reward.ToString();
         }
 
         public static void Send()

@@ -4,7 +4,6 @@ using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
 
 namespace scriptcoin
 {
@@ -16,11 +15,17 @@ namespace scriptcoin
 
         public static void MineStart()
         {
+            Console.WriteLine("Please input your private address;");
+            Miner.PubAdd = Console.ReadLine().Trim();
+            if (String.IsNullOrEmpty(Miner.PubAdd))
+            {
+                Miner.PubAdd = "0x00=jU0UrZBkqPXfp8MsMoILSRylevQGaUmJRnpFbfUvcGs=7lvpCgtyWl0";
+            }
             // Initialize miner threads
             Miner.InitializeAll();
             Miner.StartAll();
 
-            Console.ReadKey();
+            Console.ReadKey(true);
 
             Miner.StopAll();
             Console.WriteLine("Mining has stopped. {0} mining threads were used.", Miners.Count());
@@ -31,6 +36,9 @@ namespace scriptcoin
     {
         public Thread Thread { get; set; }
         public bool IsActive { get; set; }
+        public static string PubAdd { get; set; }
+        public static string Reward { get; set; }
+        public static string Difficulty { get; set; }
 
         private bool _quitThread = false;
 
@@ -81,24 +89,23 @@ namespace scriptcoin
 
         public void Mine()
         {
-
+            Console.ForegroundColor = ConsoleColor.DarkGreen;
             Random rnd = new Random();
             byte[] hashValue;
-            string Difficulty = "00000";
+            string pubAdd = PubAdd;
+            string diffVal = "00";
 
             while (!_quitThread)
             {
-                string Reward = Blockchain.Reward();
-
                 string seed = rnd.Next().ToString();
 
                 SHA256 sha256 = SHA256.Create();
                 hashValue = sha256.ComputeHash(Encoding.ASCII.GetBytes(seed));
                 string hash = Convert.ToBase64String(hashValue);
 
-                if (hash.Substring(0, (Difficulty.Length)) == Difficulty)
+                if (hash.Substring(0, (diffVal.Length)) == diffVal)
                 {
-                    Console.WriteLine(hash + (DateTimeOffset.Now.ToUnixTimeSeconds().ToString()) + Reward);
+                    Console.WriteLine(hash + (DateTimeOffset.Now.ToUnixTimeSeconds().ToString()) + "=" + pubAdd + "=" + Reward);
                 }
             }
         }
@@ -127,6 +134,7 @@ namespace scriptcoin
 
         public static void BatchStop(int number)
         {
+            Console.ForegroundColor = ConsoleColor.White;
             number = Math.Min(number, Mining.Miners.Count());
 
             int i = 0;
