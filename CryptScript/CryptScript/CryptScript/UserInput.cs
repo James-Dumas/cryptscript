@@ -8,7 +8,7 @@ namespace CryptScript
         public event InputHandler HandleInput;
         public delegate void InputHandler(string[] input, ref bool isHandled);
 
-        public List<Tuple<string, string>> Commands;
+        public List<Tuple<string, string>> Commands = new List<Tuple<string, string>>();
 
         public List<string[]> Inputs { get; set; } = new List<string[]>();
 

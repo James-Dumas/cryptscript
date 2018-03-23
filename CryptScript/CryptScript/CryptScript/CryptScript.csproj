@@ -44,7 +44,10 @@
   <ItemGroup>
     <Compile Include="Alert.cs" />
     <Compile Include="Command.cs" />
-    <Compile Include="Data.cs" />
+    <Compile Include="Commands_Coding.cs" />
+    <Compile Include="Commands_Main.cs" />
+    <Compile Include="Commands_Mining.cs" />
+    <Compile Include="Commands_Stock.cs" />
     <Compile Include="Display.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

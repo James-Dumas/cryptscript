@@ -52,5 +52,61 @@ namespace CryptScript
         /// <param name="color">The color to write in</param>
         public static void WriteLineColor(string message, ConsoleColor color) =>
             WriteColor(message + Environment.NewLine, color);
+
+        /// <summary>
+        /// Prints the current display mode
+        /// </summary>
+        public static void PrintMode()
+        {
+            // Save the current console settings
+            ConsoleColor initialForeground = Console.ForegroundColor;
+            ConsoleColor initialBackground = Console.BackgroundColor;
+            int line = Console.CursorTop;
+
+            // Initialize display settings
+            string modeText = Display.Mode.ToString().ToUpper();
+            ConsoleColor newForeground = initialForeground;
+            ConsoleColor newBackground = initialBackground;
+
+            // Get the new foreground and background colors
+            switch(Display.Mode)
+            {
+                case DisplayMode.Main:
+                    newForeground = ConsoleColor.Black;
+                    newBackground = ConsoleColor.Cyan;
+                    break;
+
+                case DisplayMode.Mining:
+                    newForeground = ConsoleColor.Black;
+                    newBackground = ConsoleColor.Green;
+                    break;
+            }
+
+            // If the log has reached the bottom, reset the display
+            if (line == Console.WindowHeight - 1)
+            {
+                line = 0;
+                Console.Clear();
+            }
+
+            // Clear the area to be printed
+            Console.SetCursorPosition(0, Console.WindowHeight - 1);
+            Console.BackgroundColor = newBackground;
+            for (int i = 0; i < Console.WindowWidth; i++)
+                Console.Write(' ');
+
+            // Print the mode
+            Console.SetCursorPosition((Console.WindowWidth / 2) - (modeText.Length / 2) - 1, Console.WindowHeight - 1);
+            Console.ForegroundColor = newForeground;
+            Console.BackgroundColor = newBackground;
+            Console.Write(" {0} ", modeText);
+
+
+            // Return to the initial console configuration
+            Console.ForegroundColor = initialForeground;
+            Console.BackgroundColor = initialBackground;
+
+            Console.SetCursorPosition(0, line);
+        }
     }
 }
