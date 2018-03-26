@@ -16,6 +16,8 @@ namespace cryptscript
         private List<Token> loopCondition { get; set; }
         private int endsNeeded { get; set; } = 0;
 
+        private static bool breakOut { get; set; } = false;
+
         public Parser(IdentifierGroup ids)
         {
             IDs = ids;
@@ -115,10 +117,6 @@ namespace cryptscript
                             }
                         }
 
-                        // NOTE: WIP code
-                        // TODO: allow function declaration by waiting for more tokenized lines of code
-                        //       and storing them until end token is found
-
                         routineName = tokens[1].Value;
                         storedCode = new List<List<Token>>();
                         parsingFunc = true;
@@ -136,6 +134,10 @@ namespace cryptscript
                     {
                         // check for return keyword
                         result = EvaluateExpression(tokens.GetRange(1, tokens.Count - 1)).Result();
+                    }
+                    else if(tokens.Count == 1 && tokens[0].Type == TokenType.Break)
+                    {
+                        breakOut = true;
                     }
                     else
                     {
@@ -214,7 +216,6 @@ namespace cryptscript
                         break;
 
                     case TokenType.While:
-                        int count = 0;
                         while(Expression.ToBool(EvaluateExpression(loopCondition).Result()))
                         {
                             foreach(List<Token> line in storedCode)
@@ -224,11 +225,16 @@ namespace cryptscript
                                 {
                                     return result;
                                 }
+
+                                if(breakOut)
+                                {
+                                    break;
+                                }
                             }
 
-                            count++;
-                            if(count > 1000000)
+                            if(breakOut)
                             {
+                                breakOut = false;
                                 break;
                             }
                         }
@@ -291,6 +297,17 @@ namespace cryptscript
                                 {
                                     return result;
                                 }
+
+                                if(breakOut)
+                                {
+                                    break;
+                                }
+                            }
+
+                            if(breakOut)
+                            {
+                                breakOut = false;
+                                break;
                             }
 
                             IDs.SetReference(varName, CreateObject(Expression.ToDouble(IDs.GetReference(varName)) + step));

@@ -11,14 +11,14 @@ namespace cryptscript
         public static bool StopExecution { get; set; } = false;
         public static string ErrorMsg { get; set; } = null;
 
-        public static void Main(string[] args)
+        public static void Start(string filename)
         {
             WalletAddr.Reference = new String("0x00=jU0UrZBkqPXfp8MsMoILSRylevQGaUmJRnpFbfUvcGs=7lvpCgtyWl0");
 
             IdentifierGroup globals = new IdentifierGroup();
             Parser parser = new Parser(globals);
 
-            if(args.Length == 0)
+            if(System.String.IsNullOrEmpty(filename))
             {
                 // interactive console interpreter
 
@@ -55,16 +55,23 @@ namespace cryptscript
                 IsInteractive = false;
 
                 string filepath;
-                if(Path.IsPathRooted(args[0]))
+                if(Path.IsPathRooted(filename))
                 {
-                    filepath = args[0];
+                    filepath = filename;
                 }
                 else
                 {
-                    filepath = Path.Combine(Directory.GetCurrentDirectory(), args[0]);
+                    filepath = Path.Combine(Directory.GetCurrentDirectory(), filename);
+                }
+
+                if(!File.Exists(filepath))
+                {
+                    Console.WriteLine("Cannot find the file specified.");
+                    return;
                 }
 
                 string[] lines = File.ReadAllLines(filepath);
+
                 foreach(string line in lines)
                 {
                     LineNumber++;
@@ -92,6 +99,17 @@ namespace cryptscript
             {
                 StopExecution = true;
             }
+        }
+
+        public static void Main(string[] args)
+        {
+            string arg = null;
+            if(args.Length > 0)
+            {
+                arg = args[0];
+            }
+
+            Start(arg);
         }
     }
 }
