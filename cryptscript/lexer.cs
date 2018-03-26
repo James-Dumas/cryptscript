@@ -43,7 +43,6 @@ namespace cryptscript
             { @" *\}",                            TokenType.RightCurly },
             { " *,",                              TokenType.Comma },
             { " *~[^#]*",                         TokenType.Comment },
-            { " *#[a-zA-Z0-9]+",                  TokenType.Buffer },
             { " *(?i)(given that)",               TokenType.If },
             { " *(?i)(do)",                       TokenType.Do },
             { " *(?i)(otherwise)",                TokenType.Else },
