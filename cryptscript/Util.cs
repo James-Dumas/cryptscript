@@ -35,5 +35,10 @@ namespace cryptscript
             Console.WriteLine(text);
             Console.ForegroundColor = ConsoleColor.White;
         }
+
+        public static void DebugLog(object obj)
+        {
+            Console.WriteLine("[DEBUG] " + obj.ToString());
+        }
     }
 }

@@ -37,6 +37,5 @@ namespace cryptscript
         InvalidArgumentError,
         IndexOutOfBoundsError,
         IdNotFoundError,
-        WalletNotFoundError
     }
 }

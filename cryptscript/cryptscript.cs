@@ -13,6 +13,8 @@ namespace cryptscript
 
         public static void Main(string[] args)
         {
+            WalletAddr.Reference = new String("0x00=jU0UrZBkqPXfp8MsMoILSRylevQGaUmJRnpFbfUvcGs=7lvpCgtyWl0");
+
             IdentifierGroup globals = new IdentifierGroup();
             Parser parser = new Parser(globals);
 
@@ -26,14 +28,14 @@ namespace cryptscript
 
                 while(!StopExecution)
                 {
-                    string prompt = parser.parsingLoop || parser.parsingFunc ? "... " : ">>> ";
+                    string prompt = !parser.doneParsing ? "... " : ">>> ";
                     string input = Util.GetInput(prompt);
 
                     if(input.Length > 0)
                     {
                         Lexer lexer = new Lexer(input);
                         IObject result = parser.Parse(lexer.Tokenize(), false);
-                        if(result != null)
+                        if(result != null && ErrorMsg == null)
                         {
                             Console.WriteLine(result.ToString());
                         }

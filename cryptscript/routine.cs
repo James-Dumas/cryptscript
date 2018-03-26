@@ -47,7 +47,7 @@ namespace cryptscript
             foreach(List<Token> line in Code)
             {
                 result = funcParser.Parse(line, true);
-                if(result != null) { break; }
+                if(result != null || Interpreter.StopExecution) { break; }
             }
 
             if(result == null)
