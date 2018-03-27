@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -18,11 +18,10 @@ namespace CryptScript
             {
                 if(Command.CheckIfValid(input, "display", ref isHandled))
                 {
-                    Alert.Info("This command is not implemented yet.");
+                    Monitor.Display();
                 }
             }),
-
-            // Command: Display -> Shows the mining display, WIP
+            
             new Command("start", "Starts the miner", delegate(string[] input, ref bool isHandled)
             {
                 if(Command.CheckIfValid(input, "start", ref isHandled))
@@ -31,8 +30,7 @@ namespace CryptScript
                     Display.Write("Mining has started.", ConsoleColor.Green);
                 }
             }),
-
-            // Command: Display -> Shows the mining display, WIP
+            
             new Command("stop", "Stops the miner", delegate(string[] input, ref bool isHandled)
             {
                 if(Command.CheckIfValid(input, "stop", ref isHandled))

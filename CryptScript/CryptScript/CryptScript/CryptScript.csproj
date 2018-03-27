@@ -49,6 +49,7 @@
     <Compile Include="Commands_Mining.cs" />
     <Compile Include="Commands_Stock.cs" />
     <Compile Include="Display.cs" />
+    <Compile Include="Monitor.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="UserInput.cs" />
