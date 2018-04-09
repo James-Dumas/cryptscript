@@ -31,9 +31,12 @@ namespace CryptScript
                 Console.SetCursorPosition(0, Console.WindowHeight - 3 - i);
                 Util.WriteColor(Messages[index].Item1, Messages[index].Item2);
             }
+        }
 
-            // Set cursor position to input location
+        public static string GetInput()
+        {
             Console.SetCursorPosition(0, Console.WindowHeight - 1);
+            return Util.PromptForString(">>> ");
         }
 
         /// <summary>
@@ -54,7 +57,7 @@ namespace CryptScript
             // Set the colors to write in
             Console.BackgroundColor = color;
             Console.ForegroundColor = ConsoleColor.Black;
-            
+
             // Print the top bar
             Console.SetCursorPosition(0, 0);
             for (int i = 0; i < Console.WindowWidth; i++)
@@ -93,7 +96,7 @@ namespace CryptScript
 
             Write("Switched to the " + Mode.ToString().ToLower() + " dialogue.", ConsoleColor.DarkYellow);
         }
-        
+
         public static void Write(string message, ConsoleColor color) =>
             Messages.Add(new Tuple<string, ConsoleColor>(message, color));
 

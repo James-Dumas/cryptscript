@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace CryptScript
@@ -18,7 +19,33 @@ namespace CryptScript
             {
                 if(Command.CheckIfValid(input, "display", ref isHandled))
                 {
-                    Monitor.Display();
+                    if(Program.IsMining)
+                    {
+                        if(Monitor.Wallet == "")
+                        {
+                            Display.Write("Please input a wallet ID.", ConsoleColor.Yellow);
+                            Display.PrintLayout();
+                            Display.PrintMessages();
+                            Monitor.Wallet = Display.GetInput();
+                        }
+
+                        Thread tempminer = new Thread(new ThreadStart(() =>
+                        {
+                            Random rand = new Random();
+                            while(Program.IsMining)
+                            {
+                                Monitor.HashRate++;
+                                System.Threading.Thread.Sleep(rand.Next(0, 5));
+                            }
+                        }));
+                        tempminer.Start();
+                        Monitor.Display();
+                        tempminer.Abort();
+                    }
+                    else
+                    {
+                        Alert.Error("Miner is not active.");
+                    }
                 }
             }),
             

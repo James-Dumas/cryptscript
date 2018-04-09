@@ -15,7 +15,7 @@ namespace CryptScript
         {
             // Initialize the display
             Display.Update(DisplayMode.Main);
-            
+
             while(IsRunning)
             {
                 // Print the display
@@ -23,8 +23,8 @@ namespace CryptScript
                 Display.PrintMessages();
 
                 // Parse user input into a command sequence
-                Display.Input.Parse(Util.PromptForString(">>> "));
+                Display.Input.Parse(Display.GetInput());
             }
-        }                
+        }
     }
 }
