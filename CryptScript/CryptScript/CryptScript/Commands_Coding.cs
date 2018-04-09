@@ -14,30 +14,21 @@ namespace CryptScript
         public static List<Command> CodingCommands = new List<Command>
         {
             // Command: Interpreter -> Opens the CryptScript interpreter
-            new Command("csi", "Opens the CryptScript interpreter", delegate(string[] input, ref bool isHandled)
+            new Command("csi", "Opens the CryptScript interpreter", delegate(string[] input)
             {
-                if(Command.CheckIfValid(input, "csi", ref isHandled))
-                {
-                    Alert.Info("Command not yet implemented.");
-                }
+                Alert.Info("Command not yet implemented.");
             }),
 
             // Command: Run -> Runs an existing CryptScript file
-            new Command("run", "Runs an existing CryptScript file", delegate(string[] input, ref bool isHandled)
+            new Command("run", "Runs an existing CryptScript file", delegate(string[] input)
             {
-                if(Command.CheckIfValid(input, "run", ref isHandled))
-                {
-                    Alert.Info("Command not yet implemented.");
-                }
+                Alert.Info("Command not yet implemented.");
             }),
 
             // Command: Return -> Returns to the main dialogue
-            new Command("ret", "Exits coding mode", delegate(string[] input, ref bool isHandled)
+            new Command("ret", "Exits coding mode", delegate(string[] input)
             {
-                if(Command.CheckIfValid(input, "ret", ref isHandled))
-                {
-                    Display.Update(DisplayMode.Main);
-                }
+                Display.Update(DisplayMode.Main);
             })
         };
     }

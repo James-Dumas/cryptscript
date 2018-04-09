@@ -9,11 +9,19 @@ namespace CryptScript
         public string Description { get; set; }
         public UserInput.InputHandler Function { get; set; }
 
-        public Command(string name, string description, UserInput.InputHandler function)
+        public delegate void Implementation(string[] input);
+
+        public Command(string name, string description, Implementation function)
         {
             Name = name.ToLower();
             Description = description;
-            Function = function;
+            Function = delegate(string[] input, ref bool isHandled)
+            {
+                if (CheckIfValid(input, Name, ref isHandled))
+                {
+                    function(input);
+                }
+            };
         }
 
         #region Static Command Logic

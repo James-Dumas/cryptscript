@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -14,21 +14,15 @@ namespace CryptScript
         public static List<Command> MainCommands = new List<Command>
         {
             // Command: Mine -> Enters the mining dialogue
-            new Command("mine", "Enters the mining dialogue", delegate(string[] input, ref bool isHandled)
+            new Command("mine", "Enters the mining dialogue", delegate(string[] input)
             {
-                if(Command.CheckIfValid(input, "mine", ref isHandled))
-                {
-                    Display.Update(DisplayMode.Mining);
-                }
+                Display.Update(DisplayMode.Mining);
             }),
 
             // Command: Code -> Enters the coding dialogue
-            new Command("code", "Enters the coding dialogue", delegate(string[] input, ref bool isHandled)
+            new Command("code", "Enters the coding dialogue", delegate(string[] input)
             {
-                if(Command.CheckIfValid(input, "code", ref isHandled))
-                {
-                    Display.Update(DisplayMode.Coding);
-                }
+                Display.Update(DisplayMode.Coding);
             })
         };
     }

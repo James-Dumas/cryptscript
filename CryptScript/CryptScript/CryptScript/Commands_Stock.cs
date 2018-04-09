@@ -11,46 +11,37 @@ namespace CryptScript
         public static List<Command> StockCommands = new List<Command>
         {
             // Command: Help -> Displays all commands and their descriptions
-            new Command("help", "Displays this message", delegate(string[] input, ref bool isHandled)
+            new Command("help", "Displays this message", delegate(string[] input)
             {
-                if(Command.CheckIfValid(input, "help", ref isHandled))
+                Display.Write("Commands for the current dialogue:", ConsoleColor.Yellow);
+
+                int tabinate = 0;
+                foreach(var command in Display.Input.Commands)
+                    tabinate = Math.Max(tabinate, command.Item1.Length);
+
+                foreach(var command in Display.Input.Commands)
                 {
-                    Display.Write("Commands for the current dialogue:", ConsoleColor.Yellow);
+                    string output =     "   " + command.Item1;
 
-                    int tabinate = 0;
-                    foreach(var command in Display.Input.Commands)
-                        tabinate = Math.Max(tabinate, command.Item1.Length);
+                    for(int i = command.Item1.Length; i < tabinate; i++)
+                        output += ' ';
 
-                    foreach(var command in Display.Input.Commands)
-                    {
-                        string output =  "    " + command.Item1;
+                    output += " -> " + command.Item2;
 
-                        for(int i = command.Item1.Length; i < tabinate; i++)
-                            output += ' ';
-
-                        output += " -> " + command.Item2;
-
-                        Display.Write(output, ConsoleColor.Yellow);
-                    }
+                    Display.Write(output, ConsoleColor.Yellow);
                 }
             }),
 
             // Command: Clear -> Clears the console window
-            new Command("clear", "Clears the console window", delegate(string[] input, ref bool isHandled)
+            new Command("clear", "Clears the console window", delegate(string[] input)
             {
-                if(Command.CheckIfValid(input, "clear", ref isHandled))
-                {
-                    Display.Clear();
-                }
+                Display.Clear();
             }),
 
             // Command: Exit -> Exits the program
-            new Command("exit", "Exits the program", delegate(string[] input, ref bool isHandled)
+            new Command("exit", "Exits the program", delegate(string[] input)
             {
-                if(Command.CheckIfValid(input, "exit", ref isHandled))
-                {
-                    Program.IsRunning = false;
-                }
+                Program.IsRunning = false;
             })
         };
     }
