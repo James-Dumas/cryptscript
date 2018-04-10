@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
@@ -21,6 +22,7 @@ namespace scriptcoin
             {
                 Miner.PubAdd = "0x00=jU0UrZBkqPXfp8MsMoILSRylevQGaUmJRnpFbfUvcGs=7lvpCgtyWl0";
             }
+            
             // Initialize miner threads
             Miner.InitializeAll();
             Miner.StartAll();
@@ -31,9 +33,10 @@ namespace scriptcoin
             Console.WriteLine("Mining has stopped. {0} mining threads were used.", Miners.Count());
         }
     }
-
+    
     class Miner
     {
+
         public Thread Thread { get; set; }
         public bool IsActive { get; set; }
         public static string PubAdd { get; set; }
@@ -87,25 +90,44 @@ namespace scriptcoin
 
         public void Abort() => _quitThread = true;
 
+        public static int blockNumber = 0;
+
         public void Mine()
         {
+            Blockchain.Difficulty();
+
+            string path = Environment.CurrentDirectory.ToString() + "\\documents\\localNode.txt";
+
             Console.ForegroundColor = ConsoleColor.DarkGreen;
             Random rnd = new Random();
             byte[] hashValue;
             string pubAdd = PubAdd;
-            string diffVal = "00";
 
             while (!_quitThread)
             {
+                string diffVal = Difficulty;
+                string rewVal = Reward;
+
                 string seed = rnd.Next().ToString();
 
                 SHA256 sha256 = SHA256.Create();
                 hashValue = sha256.ComputeHash(Encoding.ASCII.GetBytes(seed));
                 string hash = Convert.ToBase64String(hashValue);
+                string blockHash = hash + (DateTimeOffset.Now.ToUnixTimeSeconds().ToString()) + "=" + pubAdd + "=" + rewVal;
 
                 if (hash.Substring(0, (diffVal.Length)) == diffVal)
                 {
-                    Console.WriteLine(hash + (DateTimeOffset.Now.ToUnixTimeSeconds().ToString()) + "=" + pubAdd + "=" + Reward);
+                    Console.WriteLine(blockHash);
+                    
+                    using (StreamWriter sw = File.AppendText(path))
+                    {
+                        sw.WriteLine(blockHash);
+                    }
+
+                    blockNumber = blockNumber + 1;
+
+                    Blockchain.Difficulty();
+                    Blockchain.Reward(blockNumber);
                 }
             }
         }

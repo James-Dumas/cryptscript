@@ -26,3 +26,14 @@ C:\Users\corbrIsa\Documents\GitHub\cryptscript\script-coin\Control\obj\Debug\net
 C:\Users\corbrIsa\Documents\GitHub\cryptscript\script-coin\Control\obj\Debug\netcoreapp2.0\Control.AssemblyInfo.cs
 C:\Users\corbrIsa\Documents\GitHub\cryptscript\script-coin\Control\obj\Debug\netcoreapp2.0\Control.dll
 C:\Users\corbrIsa\Documents\GitHub\cryptscript\script-coin\Control\obj\Debug\netcoreapp2.0\Control.pdb
+C:\Users\Owner\Documents\GitHub\cryptscript\script-coin\Control\bin\Debug\netcoreapp2.0\Control.deps.json
+C:\Users\Owner\Documents\GitHub\cryptscript\script-coin\Control\bin\Debug\netcoreapp2.0\Control.runtimeconfig.json
+C:\Users\Owner\Documents\GitHub\cryptscript\script-coin\Control\bin\Debug\netcoreapp2.0\Control.runtimeconfig.dev.json
+C:\Users\Owner\Documents\GitHub\cryptscript\script-coin\Control\bin\Debug\netcoreapp2.0\Control.dll
+C:\Users\Owner\Documents\GitHub\cryptscript\script-coin\Control\bin\Debug\netcoreapp2.0\Control.pdb
+C:\Users\Owner\Documents\GitHub\cryptscript\script-coin\Control\obj\Debug\netcoreapp2.0\Control.csprojResolveAssemblyReference.cache
+C:\Users\Owner\Documents\GitHub\cryptscript\script-coin\Control\obj\Debug\netcoreapp2.0\Control.csproj.CoreCompileInputs.cache
+C:\Users\Owner\Documents\GitHub\cryptscript\script-coin\Control\obj\Debug\netcoreapp2.0\Control.AssemblyInfoInputs.cache
+C:\Users\Owner\Documents\GitHub\cryptscript\script-coin\Control\obj\Debug\netcoreapp2.0\Control.AssemblyInfo.cs
+C:\Users\Owner\Documents\GitHub\cryptscript\script-coin\Control\obj\Debug\netcoreapp2.0\Control.dll
+C:\Users\Owner\Documents\GitHub\cryptscript\script-coin\Control\obj\Debug\netcoreapp2.0\Control.pdb

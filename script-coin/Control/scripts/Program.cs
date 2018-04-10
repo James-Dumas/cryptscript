@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Threading;
 
 namespace scriptcoin
 {
@@ -10,13 +11,7 @@ namespace scriptcoin
         /// </summary>
         public static string LocalNodeDir =>
             Path.Combine(Directory.GetParent(Environment.CurrentDirectory).ToString(), "Documents");
-
-        /// <summary>
-        /// Gets the path of the local node document
-        /// </summary>
-        public static string LocalNodePath =>
-            Path.Combine(LocalNodeDir, "localNode.txt");
-
+        
         /// <summary>
         /// Version string
         /// </summary>
@@ -29,16 +24,11 @@ namespace scriptcoin
 
         public static void Main()
         {
-            Blockchain.Connect();
+            //Blockchain.Connect("ping");
 
             // Display version number
             Util.WriteLineColor("ScriptCoin " + Version, ConsoleColor.Cyan);
-
-            // Check if the local node file exists
-            Directory.CreateDirectory(LocalNodeDir);
-            if (!File.Exists(LocalNodePath))
-                File.Create(LocalNodePath);
-                        
+                                    
             while(!Quit)
             {
                 // Get user input

@@ -1,0 +1,5 @@
+{
+	"cars":["Ford", "BMW", "Fiat"]
+	"colors":["Green", "Red", "Blue"]
+	"shapes":["Square", "Triangle", "Circle"]
+}
