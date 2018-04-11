@@ -7,48 +7,27 @@ namespace scriptcoin
     {
         public static void Connect()
         {
-            string[] knownNodes = File.ReadAllLines(Environment.CurrentDirectory.ToString() + "\\documents\\knownNodes.txt");
-            string request = "ping";
-            string reply = "pong";
-            int nodesConnected = 0;
-            /*
-            if (knownNodes.Length >= 5)
-            {
-                for (nodesConnected = 0; nodesConnected <= 5;)
-                {
-                    int i = 0;
-                    string testIP = knownNodes[i];
-
-                    if (true)
-                    {
-                        nodesConnected++;
-                    }
-                }
-            }
-            */
+            
         }
 
         public static void Difficulty()
         {
             string difficulty = "000";
-            /*
             long prevBlock = 152164899737;
             long currentBlock = DateTimeOffset.Now.ToUnixTimeSeconds();
             long blockDelay = Math.Abs(currentBlock - prevBlock);
 
-            if (blockDelay > 220)
+            if (blockDelay >= 10)
             {
                 difficulty = difficulty + "0";
             }
-            /*
-            if (blockDelay < 1800)
+            if (blockDelay <= 20)
             {
-                if (difficulty.Length >= 1)
+                if (difficulty.Length > 1)
                 {
                     difficulty = difficulty.Substring(0, (difficulty.Length - 1));
                 }
             }
-            */
             Miner.Difficulty = difficulty;
         }
         
