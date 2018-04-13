@@ -232,8 +232,9 @@ namespace cryptscript
                                     return result;
                                 }
 
-                                if(breakOut)
+                                if(breakOut || Interpreter.ErrorMsg != null)
                                 {
+                                    breakOut = true;
                                     break;
                                 }
                             }
@@ -304,8 +305,9 @@ namespace cryptscript
                                     return result;
                                 }
 
-                                if(breakOut)
+                                if(breakOut || Interpreter.ErrorMsg != null)
                                 {
+                                    breakOut = true;
                                     break;
                                 }
                             }
