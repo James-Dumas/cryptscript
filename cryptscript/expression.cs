@@ -244,6 +244,7 @@ namespace cryptscript
                 case Boolean b: return (bool)b.Value;
                 case Integer i: return ToInt(i) != 0;
                 case Decimal d: return ToDouble(d) != 0;
+                case Iterable i: return i.Length > 0;
                 default: return !(obj is Zilch);
             }
         }

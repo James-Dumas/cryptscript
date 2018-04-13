@@ -1,0 +1,5 @@
+i = 0
+as long as i < 100 execute
+    write(i)
+concur
+read()

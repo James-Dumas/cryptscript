@@ -1,10 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace cryptscript
 {
-    class Util
+    public static class Util
     {
         /// <summary>
         /// Prompts the user for a string input
@@ -12,8 +13,12 @@ namespace cryptscript
         public static string GetInput(string prompt)
         {
             Console.Write(prompt);
-            return Console.ReadLine().Trim();
+            string input = BetterReadline.Readline();
+
+            return input == null ? "" : input.Trim();
         }
+
+        public static string GetInput() => GetInput("");
 
         /// <summary>
         /// Prompts the user for a key input
@@ -38,7 +43,13 @@ namespace cryptscript
 
         public static void DebugLog(object obj)
         {
-            Console.WriteLine("[DEBUG] " + obj.ToString());
+            string disp = obj.ToString();
+            if(obj is IObject)
+            {
+                disp = ((IObject) obj).Repr();
+            }
+
+            Console.WriteLine("[DEBUG] " + disp);
         }
     }
 }

@@ -26,6 +26,11 @@ namespace cryptscript
             
             Value = msg;
         }
+
+        public string Repr()
+        {
+            return Type.ToString();
+        }
     }
 
     public enum ErrorType
@@ -37,5 +42,7 @@ namespace cryptscript
         InvalidArgumentError,
         IndexOutOfBoundsError,
         IdNotFoundError,
+        KeyError,
+        KeyboardInterrupt,
     }
 }

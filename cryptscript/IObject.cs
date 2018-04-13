@@ -6,6 +6,7 @@ namespace cryptscript
     public interface IObject
     {
         object Value { get; }
+        string Repr();
     }
 
     /// <summary>
@@ -21,7 +22,10 @@ namespace cryptscript
         /// <summary>
         /// Returns a string that represents the object's value
         /// </summary>
-        public override string ToString() => Value == null ? "Zilch" : Value.ToString();
+        public virtual string Repr()
+        {
+            return Value.ToString();
+        }
     }
 
     /// <summary>
@@ -46,6 +50,11 @@ namespace cryptscript
     public class String : Object, IObject
     {
         public String(object value) => Value = Convert.ToString(value);
+
+        public override string Repr()
+        {
+            return '"' + Value.ToString() + '"';
+        }
     }
 
     /// <summary>
@@ -61,6 +70,6 @@ namespace cryptscript
     /// </summary>
     public class Zilch : Object, IObject
     {
-        public new object Value { get; } = "Zilch";
+        public Zilch() => Value = "Zilch";
     }
 }

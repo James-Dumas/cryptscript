@@ -24,8 +24,13 @@ namespace cryptscript
             BuiltIn.AddBuiltIns(IDs);
         }
 
-        public IObject Parse(List<Token> tokens, bool inFunc)
+        public IObject Parse(List<Token> tokens, bool inSubParser)
         {
+            if(Interpreter.ErrorMsg != null)
+            {
+                return null;
+            }
+
             IObject result = null;
 
             for(int i = 0; i < tokens.Count; i++)
@@ -124,13 +129,14 @@ namespace cryptscript
                     }
                     else if(new List<TokenType>() {TokenType.If, TokenType.While, TokenType.For}.Contains(tokens[0].Type) && tokens[tokens.Count - 1].Type == TokenType.Do)
                     {
+                        // check for loops
                         loopType = tokens[0].Type;
                         loopCondition = tokens.GetRange(1, tokens.Count - 2);
                         storedCode = new List<List<Token>>();
                         parsingLoop = true;
                         doneParsing = false;
                     }
-                    else if(tokens.Count > 1 && tokens[0].Type == TokenType.Return && inFunc)
+                    else if(tokens.Count > 1 && tokens[0].Type == TokenType.Return && inSubParser)
                     {
                         // check for return keyword
                         result = EvaluateExpression(tokens.GetRange(1, tokens.Count - 1)).Result();
@@ -143,7 +149,7 @@ namespace cryptscript
                     {
                         result = EvaluateExpression(tokens).Result();
                         // if in a function, still evaluate but don't return the result
-                        if(inFunc)
+                        if(inSubParser)
                         {
                             result = null;
                         }
@@ -206,8 +212,8 @@ namespace cryptscript
 
                         foreach(List<Token> line in storedCode)
                         {
-                            result = loopParser.Parse(line, inFunc);
-                            if(inFunc && result != null)
+                            result = loopParser.Parse(line, true);
+                            if(inSubParser && result != null)
                             {
                                 return result;
                             }
@@ -220,8 +226,8 @@ namespace cryptscript
                         {
                             foreach(List<Token> line in storedCode)
                             {
-                                result = loopParser.Parse(new List<Token>(line), inFunc);
-                                if(inFunc && result != null)
+                                result = loopParser.Parse(new List<Token>(line), true);
+                                if(inSubParser && result != null)
                                 {
                                     return result;
                                 }
@@ -292,8 +298,8 @@ namespace cryptscript
                         {
                             foreach(List<Token> line in storedCode)
                             {
-                                result = loopParser.Parse(new List<Token>(line), inFunc);
-                                if(inFunc && result != null)
+                                result = loopParser.Parse(new List<Token>(line), true);
+                                if(inSubParser && result != null)
                                 {
                                     return result;
                                 }
@@ -326,12 +332,12 @@ namespace cryptscript
         {
             // DEBUG
             /*
-            string output = "Parsing: ";
+            string output = "";
             foreach(Token t in expression)
             {
                 output += t.ToString() + " ";
             }
-            Console.WriteLine(output);
+            Util.DebugLog(output);
             */
             // DEBUG
 
@@ -376,8 +382,10 @@ namespace cryptscript
 
             for(int i = 0; i < expression.Count - 2; i++)
             {
-                if(expression[i].Type == TokenType.ID && expression[i+1].Type == TokenType.LeftParenthesis)
+                if(expression[i].Type == TokenType.ID && expression[i + 1].Type == TokenType.LeftParenthesis)
                 {
+                    // parse as function call
+
                     // find ending parenthesis
                     int parenEnd = i + 2;
                     int numParens = 0;
@@ -406,42 +414,108 @@ namespace cryptscript
                         }
                     }
 
-                    // try to call function
-                    IObject calledObj = IDs.GetReference(expression[i].Value);
-                    if(calledObj is ICallable)
-                    {
-                        List<IObject> args = new List<IObject>() {};
+                    Token callAsToken = new TokenGroup(TokenType.CalledFunc, expression.GetRange(i, parenEnd - i + 1));
+                    expression.RemoveRange(i, parenEnd - i + 1);
+                    expression.Insert(i, callAsToken);
+                }
+            }
 
-                        if(parenEnd > i + 2)
+            for(int i = 0; i < expression.Count - 1; i++)
+            {
+                if((i == 0 || (i > 0 && !(new List<TokenType>() {TokenType.Integer, TokenType.Decimal, TokenType.Bool, 
+                    TokenType.String, TokenType.Zilch, TokenType.List, TokenType.Dict, TokenType.ID, TokenType.CalledFunc,
+                    TokenType.IndexedObj, TokenType.RightParenthesis, TokenType.RightBracket, TokenType.RightCurly
+                    }.Contains(expression[i - 1].Type)))) && expression[i].Type == TokenType.LeftBracket)
+                {
+                    // parse as explicit list declaration
+
+                    // find ending bracket
+                    int brackEnd = i + 1;
+                    int numBracks = 0;
+                    while(true)
+                    {
+                        if(expression[brackEnd].Type == TokenType.LeftBracket)
                         {
-                            foreach(List<Token> argExpression in ParseCommaSyntax(expression.GetRange(i+2, parenEnd - i - 2)))
+                            numBracks++;
+                        }
+                        else if(expression[brackEnd].Type == TokenType.RightBracket)
+                        {
+                            if(numBracks > 0)
                             {
-                                IObject arg = EvaluateExpression(argExpression).Result();
-                                if(arg is Error)
-                                {
-                                    Interpreter.ThrowError((Error) arg);
-                                    return new Expression((IObject) null);
-                                }
-                                args.Add(arg);
+                                numBracks--;
+                            }
+                            else
+                            {
+                                break;
                             }
                         }
 
-                        int num = 0;
-                        while(IDs.HasID("r-" + num.ToString()))
+                        brackEnd++;
+                        if(brackEnd >= expression.Count)
                         {
-                            num++;
+                            return new Expression(new Error(ErrorType.SyntaxError));
                         }
+                    }
 
-                        IDs.SetReference("r-" + num.ToString(), ((ICallable) calledObj).Call(args));
-                        expression.RemoveRange(i, parenEnd - i + 1);
-                        expression.Insert(i, new Token(TokenType.ID, "r-" + num.ToString()));
-                    }
-                    else
-                    {
-                        return new Expression(new Error(ErrorType.IdNotFoundError));
-                    }
+                    Token listAsToken = new TokenGroup(TokenType.List, expression.GetRange(i, brackEnd - i + 1));
+                    expression.RemoveRange(i, brackEnd - i + 1);
+                    expression.Insert(i, listAsToken);
                 }
             }
+
+            for(int i = 1; i < expression.Count - 2; i++)
+            {
+                if(new List<TokenType>() {TokenType.Integer, TokenType.Decimal, TokenType.Bool, TokenType.String, 
+                    TokenType.Zilch, TokenType.List, TokenType.Dict, TokenType.ID, TokenType.CalledFunc,
+                    TokenType.IndexedObj}.Contains(expression[i - 1].Type) && expression[i].Type == TokenType.LeftBracket)
+                {
+                    // parse as indexing an object
+
+                    // find ending bracket
+                    int brackEnd = i + 1;
+                    int numBracks = 0;
+                    while(true)
+                    {
+                        if(expression[brackEnd].Type == TokenType.LeftBracket)
+                        {
+                            numBracks++;
+                        }
+                        else if(expression[brackEnd].Type == TokenType.RightBracket)
+                        {
+                            if(numBracks > 0)
+                            {
+                                numBracks--;
+                            }
+                            else
+                            {
+                                break;
+                            }
+                        }
+
+                        brackEnd++;
+                        if(brackEnd >= expression.Count)
+                        {
+                            return new Expression(new Error(ErrorType.SyntaxError));
+                        }
+                    }
+
+                    Token itemAsToken = new TokenGroup(TokenType.IndexedObj, expression.GetRange(i - 1, brackEnd - i + 2));
+                    expression.RemoveRange(i - 1, brackEnd - i + 2);
+                    expression.Insert(i - 1, itemAsToken);
+                    i--;
+                }
+            }
+
+            //DEBUG
+            /*
+            string output = "";
+            foreach(Token t in expression)
+            {
+                output += t.ToString() + " ";
+            }
+            Util.DebugLog(output);
+            */
+            //DEBUG
 
             switch(expression.Count)
             {
@@ -543,14 +617,7 @@ namespace cryptscript
                     }
                     else
                     {
-                        result = new Expression((IObject)null);
-                    }
-
-                    int num = 0;
-                    while(IDs.HasID("r-" + num.ToString()))
-                    {
-                        IDs.RemoveID("r-" + num.ToString());
-                        num++;
+                        result = new Expression(new Error(ErrorType.SyntaxError));
                     }
 
                     return result;
@@ -562,12 +629,41 @@ namespace cryptscript
         {
             List<List<Token>> result = new List<List<Token>>();
             int start = 0;
+            bool inContainer = false;
+            TokenType containerType = TokenType.Zilch;
             for(int i = 0; i <= expression.Count; i++)
             {
-                if(i == expression.Count || expression[i].Type == TokenType.Comma)
+                if(i < expression.Count && !inContainer && new List<TokenType>() {TokenType.LeftParenthesis, TokenType.LeftBracket, TokenType.LeftCurly}.Contains(expression[i].Type))
+                {
+                    inContainer = true;
+                    containerType = expression[i].Type;
+                }
+
+                if(!inContainer && (i == expression.Count || expression[i].Type == TokenType.Comma))
                 {
                     result.Add(expression.GetRange(start, i - start));
                     start = i + 1;
+                }
+
+                if(i < expression.Count && inContainer && new List<TokenType>() {TokenType.RightParenthesis, TokenType.RightBracket, TokenType.RightCurly}.Contains(expression[i].Type))
+                {
+                    bool done = false;
+                    switch(expression[i].Type)
+                    {
+                        case TokenType.RightParenthesis:
+                            done = containerType == TokenType.LeftParenthesis;
+                            break;
+
+                        case TokenType.RightBracket:
+                            done = containerType == TokenType.LeftBracket;
+                            break;
+
+                        case TokenType.RightCurly:
+                            done = containerType == TokenType.LeftCurly;
+                            break;
+                    }
+
+                    inContainer = !done;
                 }
             }
 
@@ -610,6 +706,96 @@ namespace cryptscript
 
                 case TokenType.Zilch:
                     result = new Zilch();
+                    break;
+                
+                case TokenType.List:
+                    List<IObject> listValues = new List<IObject>();
+                    if(((TokenGroup) t).Tokens.Count > 0)
+                    {
+                        foreach(List<Token> exp in ParseCommaSyntax(((TokenGroup) t).Tokens))
+                        {
+                            IObject value = EvaluateExpression(exp).Result();
+                            if(value is Error)
+                            {
+                                return value;
+                            }
+
+                            listValues.Add(value);
+                        }
+                    }
+
+                    result = new IterList(listValues);
+                    break;
+
+                case TokenType.CalledFunc:
+                    List<Token> tokens = ((TokenGroup) t).Tokens;
+                    IObject calledObj = IDs.GetReference(tokens[0].Value);
+                    if(calledObj is ICallable)
+                    {
+                        List<IObject> args = new List<IObject>();
+
+                        if(tokens.Count > 3)
+                        {
+                            foreach(List<Token> argExpression in ParseCommaSyntax(tokens.GetRange(2, tokens.Count - 3)))
+                            {
+                                IObject arg = EvaluateExpression(argExpression).Result();
+                                if(arg is Error)
+                                {
+                                    return arg;
+                                }
+
+                                args.Add(arg);
+                            }
+                        }
+
+                        result = ((ICallable) calledObj).Call(args);
+                    }
+                    else
+                    {
+                        return new Error(ErrorType.IdNotFoundError);
+                    }
+
+                    break;
+                
+                case TokenType.IndexedObj:
+                    TokenGroup tg = (TokenGroup) t;
+                    IObject indexedObj = CreateFromToken(tg.Tokens[0]);
+                    IObject indexObj = EvaluateExpression(tg.Tokens.GetRange(2, tg.Tokens.Count - 3)).Result();
+                    if(indexObj is Error)
+                    {
+                        return indexObj;
+                    }
+
+                    if(!(indexedObj is Iterable))
+                    {
+                        return new Error(ErrorType.TypeMismatchError);
+                    }
+                    else
+                    {
+                        if(indexedObj is IterList && !(indexObj is Integer))
+                        {
+                            return new Error(ErrorType.TypeMismatchError);
+                        }
+
+                        int index = Expression.ToInt(indexObj);
+
+                        switch(indexedObj)
+                        {
+                            case IterList iter:
+                                if(iter.RealIndex(index) >= iter.Length)
+                                {
+                                    return new Error(ErrorType.IndexOutOfBoundsError);
+                                }
+
+                                result = iter.Get(index);
+
+                                break;
+
+                            case IterDict iter:
+                                break;
+                        }
+                    }
+
                     break;
             }
 

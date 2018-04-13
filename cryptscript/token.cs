@@ -37,7 +37,7 @@ namespace cryptscript
         /// Returns a formatted representation of the token
         /// </summary>
         public override string ToString() =>
-            System.String.Format("({0}, '{1}')", Type.ToString(), Value);
+            System.String.Format("(Type: {0}, Value: '{1}')", Type.ToString(), Value);
 
         /// <summary>
         /// Dictionary that relates tokens to their respective operations
@@ -71,6 +71,39 @@ namespace cryptscript
             TokenType.For,
             TokenType.Func
         };
+    }
+
+    public class TokenGroup : Token
+    {
+        public List<Token> Tokens { get; set; }
+
+        public TokenGroup(TokenType type, List<Token> tokens) : base(type, "")
+        {
+            if(type == TokenType.List || type == TokenType.Dict)
+            {
+                tokens.RemoveAt(0);
+                tokens.RemoveAt(tokens.Count - 1);
+            }
+
+            Tokens = tokens;
+        }
+
+        public override string ToString()
+        {
+            string str = "(Type: " + Type.ToString() + ", Tokens: {";
+            for(int i = 0; i < Tokens.Count; i++)
+            {
+                str += Tokens[i].ToString();
+                if(i < Tokens.Count - 1)
+                {
+                    str += ", ";
+                }
+            }
+
+            str += "})";
+
+            return str;
+        }
     }
 
     /// <summary>
@@ -122,6 +155,10 @@ namespace cryptscript
         Integer,
         Decimal,
         ID,
-        Unknown
+        Unknown,
+        List,
+        Dict,
+        IndexedObj,
+        CalledFunc
     }
 }

@@ -3,9 +3,8 @@ using System.Collections.Generic;
 
 namespace cryptscript
 {
-    public class BuiltIn : ICallable
+    public class BuiltIn : Object, ICallable
     {
-        public object Value { get; set; } = null;
         private BuiltInRoutine RoutineName { get; set; }
 
         public BuiltIn(BuiltInRoutine routine)
@@ -54,7 +53,7 @@ namespace cryptscript
                             break;
 
                         case 1:
-                            Console.WriteLine(args[0].ToString());
+                            Console.WriteLine(args[0].Repr());
                             break;
                         
                         default:
@@ -76,7 +75,7 @@ namespace cryptscript
                             Console.Write(args[0].Value.ToString());
                         }
 
-                        result = new String(Console.ReadLine());
+                        result = new String(Util.GetInput());
                     }
 
                     break;
@@ -187,7 +186,7 @@ namespace cryptscript
                             }
                             else
                             {
-                                result = new String(str.Substring(index1, index2));
+                                result = new String(str.Substring(index1, index2 - index1));
                             }
                         }
                     }
@@ -199,16 +198,59 @@ namespace cryptscript
                     {
                         result = new Error(ErrorType.InvalidArgumentError);
                     }
-                    else if(!(args[0] is String))
-                    {
-                        result = new Error(ErrorType.TypeMismatchError);
-                    }
-                    else
+                    else if(args[0] is String)
                     {
                         result = new Integer(((string) args[0].Value).Length);
                     }
+                    else if(args[0] is Iterable)
+                    {
+                        result = new Integer(((Iterable) args[0]).Length);
+                    }
+                    else
+                    {
+                        result = new Error(ErrorType.TypeMismatchError);
+                    }
 
                     break;                    
+                
+                case BuiltInRoutine.Type:
+                    if(args.Count != 1)
+                    {
+                        result = new Error(ErrorType.InvalidArgumentError);
+                    }
+                    else
+                    {
+                        IObject obj = args[0];
+                        string type = "";
+                        if(obj is Integer || obj is Decimal)
+                        {
+                            type = "number";
+                        }
+                        else if(obj is String)
+                        {
+                            type = "string";
+                        }
+                        else if(obj is Boolean)
+                        {
+                            type = "boolean";
+                        }
+                        else if(obj is Zilch)
+                        {
+                            type = "zilch";
+                        }
+                        else if(obj is IterList)
+                        {
+                            type = "list";
+                        }
+                        else if(obj is IterDict)
+                        {
+                            type = "dict";
+                        }
+
+                        result = new String(type);
+                    }
+
+                    break;
 
                 case BuiltInRoutine.Exit:
                     if(args.Count > 0)
@@ -227,7 +269,7 @@ namespace cryptscript
             return result;
         }
 
-        public override string ToString()
+        public override string Repr()
         {
             return "<built-in routine>";
         }
@@ -245,6 +287,7 @@ namespace cryptscript
         Strip,
         Slice,
         Length,
+        Type,
         Exit
     }
 }

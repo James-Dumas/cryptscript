@@ -18,6 +18,12 @@ namespace cryptscript
             IdentifierGroup globals = new IdentifierGroup();
             Parser parser = new Parser(globals);
 
+            Console.CancelKeyPress += delegate(object sender, ConsoleCancelEventArgs args) {
+                args.Cancel = true;
+                BetterReadline.Interrupt();
+                Interpreter.ThrowError(new Error(ErrorType.KeyboardInterrupt));
+            };
+
             if(System.String.IsNullOrEmpty(filename))
             {
                 // interactive console interpreter
@@ -37,7 +43,7 @@ namespace cryptscript
                         IObject result = parser.Parse(lexer.Tokenize(), false);
                         if(result != null && ErrorMsg == null)
                         {
-                            Console.WriteLine(result.ToString());
+                            Console.WriteLine(result.Repr());
                         }
                     }
 

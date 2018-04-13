@@ -7,9 +7,8 @@ namespace cryptscript
         IObject Call(List<IObject> args);
     }
 
-    public class Routine : ICallable
+    public class Routine : Object, ICallable
     {
-        public object Value { get; set; } = null;
         private List<string> Arguments { get; set; }
         private List<List<Token>> Code { get; set; }
 
@@ -58,7 +57,7 @@ namespace cryptscript
             return result;
         }
 
-        public override string ToString()
+        public override string Repr()
         {
             return "<user-defined routine>";
         }
