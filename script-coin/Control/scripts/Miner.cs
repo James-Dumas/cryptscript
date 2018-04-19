@@ -84,8 +84,7 @@ namespace scriptcoin
                 Miner miner = new Miner();
             }
         }
-
-        static readonly object _locker = new object();
+        
         public void Mine()
         {
             Console.ForegroundColor = ConsoleColor.DarkGreen;
@@ -93,23 +92,23 @@ namespace scriptcoin
             byte[] hashValue;
             string pubAdd = PubAdd;
             Blockchain.Difficulty();
+            string path = Environment.CurrentDirectory.ToString() + "\\documents\\localNode.txt";
 
             while (!_quitThread)
             {
-                string diffVal = Difficulty;
                 string seed = rnd.Next().ToString();
 
                 SHA256 sha256 = SHA256.Create();
                 hashValue = sha256.ComputeHash(Encoding.ASCII.GetBytes(seed));
                 string hash = Convert.ToBase64String(hashValue);
 
-                Monitor.Enter(_locker);
-                if (hash.Substring(0, (diffVal.Length)) == diffVal)
+                Monitor.Enter(path);
+                if (hash.Substring(0, (Difficulty.Length)) == Difficulty)
                 {
                     Console.WriteLine(hash + (DateTimeOffset.Now.ToUnixTimeSeconds().ToString()) + "=" + pubAdd + "=" + Reward);
                     Blockchain.Difficulty();
                 }
-                Monitor.Exit(_locker);
+                Monitor.Exit(path);
             }
         }
 

@@ -12,20 +12,21 @@ namespace scriptcoin
 
         public static void Difficulty()
         {
-            string difficulty = "000";
-            long prevBlock = 152164899737;
-            long currentBlock = DateTimeOffset.Now.ToUnixTimeSeconds();
-            long blockDelay = Math.Abs(currentBlock - prevBlock);
+            string difficulty = "00";
+            string prevBlock = 152164899737.ToString();
+            string currentBlock = DateTimeOffset.Now.ToUnixTimeSeconds().ToString();
+            long blockDelay = Math.Abs(Int64.Parse(prevBlock) - Int64.Parse(currentBlock));
+            prevBlock = currentBlock;
 
-            if (blockDelay >= 10)
+            if (blockDelay < 10)
             {
                 difficulty = difficulty + "0";
             }
-            if (blockDelay <= 20)
+            if (blockDelay > 20)
             {
-                if (difficulty.Length > 1)
+                if (difficulty.Length < 1)
                 {
-                    difficulty = difficulty.Substring(0, (difficulty.Length - 1));
+                    difficulty.Substring(0, (difficulty.Length - 1));
                 }
             }
             Miner.Difficulty = difficulty;

@@ -1,0 +1,13 @@
+through i, 1, 101 execute
+	callVar = ""
+	given that (i % 3 == 0) execute
+		callVar = callVar + "Fizz"
+	concur
+	given that (i % 5 == 0) execute
+		callVar = callVar + "Buzz"
+	concur
+	given that callVar execute
+		write callVar
+	concur
+concur 
+read()

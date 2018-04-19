@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "cryptscript": {
+      "commandName": "Project",
+      "commandLineArgs": "\"test_script.txt\""
+    }
+  }
+}
