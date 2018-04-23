@@ -5,6 +5,8 @@ namespace scriptcoin
 {
     public class Blockchain
     {
+        public static string difficulty = "0";
+
         public static void Connect()
         {
             
@@ -12,24 +14,27 @@ namespace scriptcoin
 
         public static void Difficulty()
         {
-            string difficulty = "00";
-            string prevBlock = 152164899737.ToString();
+            string diffVal = difficulty;
+            string prevBlock = "9737";
             string currentBlock = DateTimeOffset.Now.ToUnixTimeSeconds().ToString();
-            long blockDelay = Math.Abs(Int64.Parse(prevBlock) - Int64.Parse(currentBlock));
-            prevBlock = currentBlock;
+            string currentTrunk = currentBlock.Substring(currentBlock.Length - 4);
+            int blockDelay = Math.Abs(Int32.Parse(currentTrunk) - Int32.Parse(prevBlock));
+            prevBlock = currentTrunk;
 
-            if (blockDelay < 10)
+            if (blockDelay < 8900)
             {
-                difficulty = difficulty + "0";
+                diffVal = diffVal + "0";
             }
-            if (blockDelay > 20)
+            if (blockDelay > 9100)
             {
                 if (difficulty.Length < 1)
                 {
                     difficulty.Substring(0, (difficulty.Length - 1));
                 }
             }
-            Miner.Difficulty = difficulty;
+
+            difficulty = diffVal;
+            Miner.Difficulty = diffVal;
         }
         
         public static void Reward()
