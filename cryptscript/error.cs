@@ -15,7 +15,7 @@ namespace cryptscript
             Type = type;
 
             string msg = "";
-            if(!Interpreter.IsInteractive)
+            if(LineNumber > 0)
             {
                 msg += System.String.Format("{0} on line {1}", Type, LineNumber);
             }
@@ -43,6 +43,7 @@ namespace cryptscript
         IndexOutOfBoundsError,
         IdNotFoundError,
         KeyError,
+        FileError,
         KeyboardInterrupt,
     }
 }

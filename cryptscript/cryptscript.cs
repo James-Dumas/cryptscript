@@ -15,8 +15,6 @@ namespace cryptscript
             Lexer lexer = new Lexer();
             Parser parser = new Parser(new IdentifierGroup());
 
-            IsInteractive = true;
-
             Console.WriteLine("Type 'exit' to quit.");
 
             while(!StopExecution)
@@ -41,12 +39,11 @@ namespace cryptscript
             }
         }
 
-        public static void RunScriptFile(string filename)
+        public static IdentifierGroup RunScriptFile(string filename)
         {
             Lexer lexer = new Lexer();
-            Parser parser = new Parser(new IdentifierGroup());
-
-            IsInteractive = false;
+            IdentifierGroup ids = new IdentifierGroup();
+            Parser parser = new Parser(ids);
 
             string filepath;
             if(Path.IsPathRooted(filename))
@@ -60,8 +57,7 @@ namespace cryptscript
 
             if(!File.Exists(filepath))
             {
-                Console.WriteLine("Cannot find the file specified.");
-                return;
+                return null;
             }
 
             string[] lines = File.ReadAllLines(filepath);
@@ -79,7 +75,12 @@ namespace cryptscript
             if(ErrorMsg != null)
             {
                 Util.WriteColor(ErrorMsg, ConsoleColor.Red);
+                ErrorMsg = null;
             }
+
+            Interpreter.StopExecution = false;
+
+            return ids;
         }
 
         public static void ThrowError(Error e)
@@ -108,11 +109,17 @@ namespace cryptscript
 
             if(System.String.IsNullOrEmpty(filename))
             {
+                IsInteractive = true;
                 RunConsoleInterpreter();
             }
             else
             {
-                RunScriptFile(filename);
+                IsInteractive = false;
+                IdentifierGroup ids = RunScriptFile(filename);
+                if(ids == null)
+                {
+                    Console.WriteLine("Cannot find the file specified.");
+                }
             }
         }
     }

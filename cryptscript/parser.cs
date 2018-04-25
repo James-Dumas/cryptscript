@@ -272,6 +272,38 @@ namespace cryptscript
                     {
                         breakOut = true;
                     }
+                    else if(tokens[0].Type == TokenType.Import)
+                    {
+                        if(tokens.Count < 2)
+                        {
+                            Interpreter.ThrowError(new Error(ErrorType.SyntaxError));
+                            return null;
+                        }
+
+                        IObject utilize = EvaluateExpression(tokens.GetRange(1, tokens.Count - 1)).Result();
+                        if(utilize == null)
+                        {
+                            return null;
+                        }
+
+                        if(!(utilize is String))
+                        {
+                            Interpreter.ThrowError(new Error(ErrorType.TypeMismatchError));
+                            return null;
+                        }
+
+                        bool temp = Interpreter.IsInteractive;
+                        Interpreter.IsInteractive = false;
+                        IdentifierGroup scriptIDs = Interpreter.RunScriptFile(utilize.Value.ToString());
+                        Interpreter.IsInteractive = temp;
+                        if(scriptIDs == null)
+                        {
+                            Interpreter.ThrowError(new Error(ErrorType.FileError));
+                            return null;
+                        }
+
+                        IDs.AddIDGroup(scriptIDs);
+                    }
                     else
                     {
                         result = EvaluateExpression(tokens).Result();

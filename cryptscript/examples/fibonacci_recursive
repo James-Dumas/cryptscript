@@ -1,0 +1,8 @@
+routine fibonacci(a, b, limit)
+    given that a < limit do
+        write(a)
+        fibonacci(b, a + b, limit)
+    concur
+concur
+
+fibonacci(1, 1, 100)

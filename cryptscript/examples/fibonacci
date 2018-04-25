@@ -1,0 +1,8 @@
+a = 1
+b = 1
+as long as a < 100 do
+    write(a)
+    c = a + b
+    a = b
+    b = c
+concur

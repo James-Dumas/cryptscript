@@ -38,5 +38,24 @@ namespace cryptscript
 
             return IDs[name].Reference;
         }
+
+        public List<string> GetAllIDNames()
+        {
+            List<string> IDNames = new List<string>();
+            foreach(KeyValuePair<string, Identifier> kv in IDs)
+            {
+                IDNames.Add(kv.Key);
+            }
+
+            return IDNames;
+        }
+
+        public void AddIDGroup(IdentifierGroup group)
+        {
+            foreach(string IDName in group.GetAllIDNames())
+            {
+                SetReference(IDName, group.GetReference(IDName));
+            }
+        }
     }
 }

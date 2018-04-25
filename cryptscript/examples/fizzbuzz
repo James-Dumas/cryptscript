@@ -1,0 +1,16 @@
+through i, 100 do
+    value = ""
+    given that i % 3 == 0 do
+        value = "Fizz"
+    concur
+
+    given that i % 5 == 0 do
+        value = value + "Buzz"
+    concur
+
+    given that length(value) == 0 do
+        value = i
+    concur
+
+    write(value)
+concur

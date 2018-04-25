@@ -48,14 +48,14 @@ through i, length(code) do      ~ iterate through the length of the code
     concur
 
     given that char == "," do
-        input = number(read())
+        input = number(read())      ~ take a number as input
         as long as input < 0 do
             input = input + 256
         concur
 
         input = input % 256
 
-        tape[pointer] = input
+        tape[pointer] = input       ~ store the number at the location under the pointer
     concur
 concur
 
