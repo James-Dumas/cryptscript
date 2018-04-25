@@ -50,11 +50,6 @@ namespace cryptscript
     public class String : Object, IObject
     {
         public String(object value) => Value = Convert.ToString(value);
-
-        public override string Repr()
-        {
-            return '"' + Value.ToString() + '"';
-        }
     }
 
     /// <summary>

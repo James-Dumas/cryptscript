@@ -6,95 +6,79 @@ namespace cryptscript
     public class Interpreter
     {
         public static bool IsInteractive { get; set; }
-        public static int LineNumber { get; set; } = 0;
         public static Identifier WalletAddr { get; set; } = new Identifier();
         public static bool StopExecution { get; set; } = false;
         public static string ErrorMsg { get; set; } = null;
 
-        public static void Start(string filename)
+        public static void RunConsoleInterpreter()
         {
-            WalletAddr.Reference = new String("0x00=jU0UrZBkqPXfp8MsMoILSRylevQGaUmJRnpFbfUvcGs=7lvpCgtyWl0");
+            Lexer lexer = new Lexer();
+            Parser parser = new Parser(new IdentifierGroup());
 
-            IdentifierGroup globals = new IdentifierGroup();
-            Parser parser = new Parser(globals);
+            IsInteractive = true;
 
-            Console.CancelKeyPress += delegate(object sender, ConsoleCancelEventArgs args) {
-                args.Cancel = true;
-                BetterReadline.Interrupt();
-                Interpreter.ThrowError(new Error(ErrorType.KeyboardInterrupt));
-            };
+            Console.WriteLine("Type 'exit' to quit.");
 
-            if(System.String.IsNullOrEmpty(filename))
+            while(!StopExecution)
             {
-                // interactive console interpreter
+                string prompt = !parser.doneParsing ? "... " : ">>> ";
+                string input = Util.GetInput(prompt);
 
-                IsInteractive = true;
-
-                Console.WriteLine("Type 'exit' to quit.");
-
-                while(!StopExecution)
+                if(input.Length > 0)
                 {
-                    string prompt = !parser.doneParsing ? "... " : ">>> ";
-                    string input = Util.GetInput(prompt);
-
-                    if(input.Length > 0)
+                    IObject result = parser.Parse(new Line(lexer.Tokenize(input), -1), false);
+                    if(result != null && ErrorMsg == null)
                     {
-                        Lexer lexer = new Lexer(input);
-                        IObject result = parser.Parse(lexer.Tokenize(), false);
-                        if(result != null && ErrorMsg == null)
-                        {
-                            Console.WriteLine(result.Repr());
-                        }
+                        Console.WriteLine(result.Repr());
                     }
-
-                    if(ErrorMsg != null)
-                    {
-                        Util.WriteColor(ErrorMsg, ConsoleColor.Red);
-                        ErrorMsg = null;
-                    }
-                }
-            }
-            else
-            {
-                // run script file
-
-                IsInteractive = false;
-
-                string filepath;
-                if(Path.IsPathRooted(filename))
-                {
-                    filepath = filename;
-                }
-                else
-                {
-                    filepath = Path.Combine(Directory.GetCurrentDirectory(), filename);
-                }
-
-                if(!File.Exists(filepath))
-                {
-                    Console.WriteLine("Cannot find the file specified.");
-                    return;
-                }
-
-                string[] lines = File.ReadAllLines(filepath);
-
-                foreach(string line in lines)
-                {
-                    LineNumber++;
-                    string code = line.Trim();
-                    if(code.Length > 0)
-                    {
-                        Lexer lexer = new Lexer(line);
-                        parser.Parse(lexer.Tokenize(), false);
-                    }
-
-                    if(StopExecution) { break; }
                 }
 
                 if(ErrorMsg != null)
                 {
                     Util.WriteColor(ErrorMsg, ConsoleColor.Red);
+                    ErrorMsg = null;
                 }
+            }
+        }
+
+        public static void RunScriptFile(string filename)
+        {
+            Lexer lexer = new Lexer();
+            Parser parser = new Parser(new IdentifierGroup());
+
+            IsInteractive = false;
+
+            string filepath;
+            if(Path.IsPathRooted(filename))
+            {
+                filepath = filename;
+            }
+            else
+            {
+                filepath = Path.Combine(Directory.GetCurrentDirectory(), filename);
+            }
+
+            if(!File.Exists(filepath))
+            {
+                Console.WriteLine("Cannot find the file specified.");
+                return;
+            }
+
+            string[] lines = File.ReadAllLines(filepath);
+
+            for(int i = 0; i < lines.Length; i++)
+            {
+                string code = lines[i].Trim();
+                Line line = new Line(lexer.Tokenize(code), i + 1);
+                if(line.Tokens.Count > 0)
+                    parser.Parse(line, false);
+
+                if(StopExecution) { break; }
+            }
+
+            if(ErrorMsg != null)
+            {
+                Util.WriteColor(ErrorMsg, ConsoleColor.Red);
             }
         }
 
@@ -109,13 +93,27 @@ namespace cryptscript
 
         public static void Main(string[] args)
         {
-            string arg = null;
+            string filename = null;
             if(args.Length > 0)
             {
-                arg = args[0];
+                filename = args[0];
             }
 
-            Start(arg);
+            WalletAddr.Reference = new String("0x00=jU0UrZBkqPXfp8MsMoILSRylevQGaUmJRnpFbfUvcGs=7lvpCgtyWl0");
+
+            Console.CancelKeyPress += new ConsoleCancelEventHandler(delegate(object sender, ConsoleCancelEventArgs e) {
+                e.Cancel = true;
+                Interpreter.ThrowError(new Error(ErrorType.KeyboardInterrupt));
+            });
+
+            if(System.String.IsNullOrEmpty(filename))
+            {
+                RunConsoleInterpreter();
+            }
+            else
+            {
+                RunScriptFile(filename);
+            }
         }
     }
 }

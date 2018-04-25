@@ -17,6 +17,7 @@ namespace cryptscript
             {
                 case TokenType.String:
                     Value = Value.Substring(1, Value.Length - 2);
+                    Value = Util.EscapeString(Value);
                     break;
 
                 case TokenType.Integer:
@@ -65,11 +66,23 @@ namespace cryptscript
         public static List<TokenType> LoopTokens = new List<TokenType>()
         {
             TokenType.If,
-            TokenType.Elif,
-            TokenType.Else,
             TokenType.While,
             TokenType.For,
             TokenType.Func
+        };
+
+        public static List<TokenType> ObjectTokens = new List<TokenType>()
+        {
+            TokenType.String,
+            TokenType.Zilch,
+            TokenType.Bool,
+            TokenType.Integer,
+            TokenType.Decimal,
+            TokenType.ID,
+            TokenType.List,
+            TokenType.Dict,
+            TokenType.IndexedObj,
+            TokenType.CalledObj
         };
     }
 
@@ -137,6 +150,7 @@ namespace cryptscript
         LeftCurly,
         RightCurly,
         Comma,
+        Colon,
         Comment,
         Buffer,
         If,
@@ -150,6 +164,9 @@ namespace cryptscript
         End,
         Break,
         Return,
+        Try,
+        Catch,
+        Import,
         Zilch,
         Bool,
         Integer,
@@ -159,6 +176,6 @@ namespace cryptscript
         List,
         Dict,
         IndexedObj,
-        CalledFunc
+        CalledObj,
     }
 }

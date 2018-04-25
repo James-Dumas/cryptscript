@@ -5,15 +5,17 @@ namespace cryptscript
 {
     public class Parser
     {
-        private IdentifierGroup IDs { get; set; }
+        public static int lineNumber { get; set; } = 1;
         public bool parsingLoop { get; set; } = false;
         public bool parsingFunc { get; set; } = false;
         public bool doneParsing { get; set; } = true;
-        private List<List<Token>> storedCode { get; set; }
+        private IdentifierGroup IDs { get; set; }
+        private List<Line> storedCode { get; set; }
         private List<string> storedArgs { get; set; }
         private string routineName { get; set; }
         private TokenType loopType { get; set; }
         private List<Token> loopCondition { get; set; }
+        private int loopStartLine { get; set; }
         private int endsNeeded { get; set; } = 0;
 
         private static bool breakOut { get; set; } = false;
@@ -24,30 +26,117 @@ namespace cryptscript
             BuiltIn.AddBuiltIns(IDs);
         }
 
-        public IObject Parse(List<Token> tokens, bool inSubParser)
+        public List<Token> PreParse(List<Token> ungroupedTokens)
         {
+            // Pre-Parser will convert groups of related tokens into TokenGroup objects
+            // also maybe parsing out negative numbers, not sure yet
+
+            List<Token> tokens = new List<Token>();
+
+            for(int i = 0; i < ungroupedTokens.Count; i++)
+            {
+                // check for unknown tokens
+                if(ungroupedTokens[i].Type == TokenType.Unknown)
+                {
+                    Interpreter.ThrowError(new Error(ErrorType.TokenNotFoundError));
+                    return null;
+                }
+            }
+
+            for(int i = 0; i < ungroupedTokens.Count; i++)
+            {
+                // add all tokens except comments to new list
+                if(ungroupedTokens[i].Type != TokenType.Comment)
+                {
+                    tokens.Add(ungroupedTokens[i]);
+                }
+            }
+
+            for(int i = 0; i < tokens.Count; i++)
+            {
+                if(i < tokens.Count - 1)
+                {
+                    if(Token.ObjectTokens.Contains(tokens[i].Type) && tokens[i + 1].Type == TokenType.LeftBracket)
+                    {
+                        // indexed object
+
+                        int endIndex = FindClosingBrace(tokens, i + 1);
+
+                        if(endIndex - 2 == i || endIndex == -1)
+                        {
+                            Interpreter.ThrowError(new Error(ErrorType.SyntaxError));
+                            return null;
+                        }
+
+                        List<Token> containedTokens = new List<Token>() {tokens[i], tokens[i + 1], tokens[endIndex]};
+                        containedTokens.InsertRange(2, PreParse(tokens.GetRange(i + 2, endIndex - i - 2)));
+
+                        tokens.RemoveRange(i, endIndex - i + 1);
+                        tokens.Insert(i, new TokenGroup(TokenType.IndexedObj, containedTokens));
+                        i = -1;
+                        continue;
+                    }
+                    else if(Token.ObjectTokens.Contains(tokens[i].Type) && tokens[i + 1].Type == TokenType.LeftParenthesis && (i == 0 || tokens[i - 1].Type != TokenType.Func))
+                    {
+                        // called object
+
+                        int endIndex = FindClosingBrace(tokens, i + 1); 
+
+                        if(endIndex == -1)
+                        {
+                            Interpreter.ThrowError(new Error(ErrorType.SyntaxError));
+                            return null;
+                        }
+
+                        List<Token> containedTokens = new List<Token>() {tokens[i], tokens[i + 1], tokens[endIndex]};
+                        containedTokens.InsertRange(2, PreParse(tokens.GetRange(i + 2, endIndex - i - 2)));
+
+                        tokens.RemoveRange(i, endIndex - i + 1);
+                        tokens.Insert(i, new TokenGroup(TokenType.CalledObj, containedTokens));
+                        i = -1;
+                        continue;
+                    }
+                }
+
+                if(tokens[i].Type == TokenType.LeftBracket || tokens[i].Type == TokenType.LeftCurly)
+                {
+                    // lists and dictionaries
+
+                    TokenType type = tokens[i].Type == TokenType.LeftBracket ? TokenType.List : TokenType.Dict;
+                    int endIndex = FindClosingBrace(tokens, i); 
+
+                    if(endIndex == -1)
+                    {
+                        Interpreter.ThrowError(new Error(ErrorType.SyntaxError));
+                        return null;
+                    }
+
+                    List<Token> containedTokens = new List<Token>() {tokens[i], tokens[endIndex]};
+                    containedTokens.InsertRange(1, PreParse(tokens.GetRange(i + 1, endIndex - i - 1)));
+
+                    tokens.RemoveRange(i, endIndex - i + 1);
+                    tokens.Insert(i, new TokenGroup(type, containedTokens));
+                    i = -1;
+                    continue;
+                }
+
+            }
+
+            return tokens;
+        }
+
+        public IObject Parse(Line line, bool inSubParser)
+        {
+
+            List<Token> tokens = PreParse(line.Tokens);
+            lineNumber = line.LineNum;
+
             if(Interpreter.ErrorMsg != null)
             {
                 return null;
             }
 
             IObject result = null;
-
-            for(int i = 0; i < tokens.Count; i++)
-            {
-                // check for unknown tokens
-                if(tokens[i].Type == TokenType.Unknown)
-                {
-                    Interpreter.ThrowError(new Error(ErrorType.TokenNotFoundError));
-                    return null;
-                }
-
-                // remove comments
-                if(tokens[i].Type == TokenType.Comment)
-                {
-                    tokens.RemoveAt(i);
-                }
-            }
 
             if((parsingFunc || parsingLoop) && !doneParsing && tokens.Count > 0)
             {
@@ -58,28 +147,27 @@ namespace cryptscript
                     {
                         // end token must be alone on a line
                         Interpreter.ThrowError(new Error(ErrorType.SyntaxError));
+                        return null;
+                    }
+
+                    if(endsNeeded > 0)
+                    {
+                        endsNeeded--;
                     }
                     else
                     {
-                        if(endsNeeded > 0)
-                        {
-                            endsNeeded--;
-                        }
-                        else
-                        {
-                            doneParsing = true;
-                        }
+                        doneParsing = true;
                     }
                 }
 
-                if(new List<TokenType>() {TokenType.If, TokenType.While, TokenType.For}.Contains(tokens[0].Type))
+                if(Token.LoopTokens.Contains(tokens[0].Type))
                 {
                     endsNeeded++;
                 }
 
                 if(!doneParsing)
                 {
-                    storedCode.Add(tokens);
+                    storedCode.Add(line);
                 }
             }
             else
@@ -89,19 +177,57 @@ namespace cryptscript
 
                 if(tokens.Count > 0)
                 {
-                    if(tokens.Count > 1 && tokens[0].Type == TokenType.ID && tokens[1].Type == TokenType.Set)
+                    if(tokens.Count > 1 && (tokens[0].Type == TokenType.ID || tokens[0].Type == TokenType.IndexedObj) && tokens[1].Type == TokenType.Set)
                     {
                         // check for 'variable = expression' syntax
 
                         IObject expressionResult = EvaluateExpression(tokens.GetRange(2, tokens.Count - 2)).Result(); 
-                        string IdName = tokens[0].Value;
-                        if(expressionResult is Error)
+                        string IdName;
+                        if(expressionResult != null)
                         {
-                            result = expressionResult;
-                        }
-                        else
-                        {
-                            IDs.SetReference(IdName, expressionResult);
+                            if(tokens[0].Type == TokenType.ID)
+                            {
+                                IdName = tokens[0].Value;
+                                IDs.SetReference(IdName, expressionResult);
+                            }
+                            else
+                            {
+                                TokenGroup tg = (TokenGroup) tokens[0];
+                                IObject indexedObj = CreateFromToken(tg.Tokens[0]);
+                                IObject indexObj = EvaluateExpression(tg.Tokens.GetRange(2, tg.Tokens.Count - 3)).Result();
+                                if(indexObj == null)
+                                {
+                                    return null;
+                                }
+
+                                if(!(indexedObj is Iterable) || (indexedObj is IterList && !(indexObj is Integer)))
+                                {
+                                    Interpreter.ThrowError(new Error(ErrorType.TypeMismatchError));
+                                    return null;
+                                }
+
+                                int index = Expression.ToInt(indexObj);
+
+                                switch(indexedObj)
+                                {
+                                    case IterList iter:
+                                        if(iter.RealIndex(index) >= iter.Length)
+                                        {
+                                            Interpreter.ThrowError(new Error(ErrorType.IndexOutOfBoundsError));
+                                            return null;
+                                        }
+                                        else
+                                        {
+                                            iter.Set(index, expressionResult);
+                                        }
+
+                                        break;
+
+                                    case IterDict iter:
+                                        // implement dictionary indexing
+                                        break;
+                                }
+                            }
                         }
                     }
                     else if(tokens.Count > 3 && tokens[0].Type == TokenType.Func && tokens[1].Type == TokenType.ID && tokens[2].Type == TokenType.LeftParenthesis && tokens[tokens.Count - 1].Type == TokenType.RightParenthesis)
@@ -123,7 +249,7 @@ namespace cryptscript
                         }
 
                         routineName = tokens[1].Value;
-                        storedCode = new List<List<Token>>();
+                        storedCode = new List<Line>();
                         parsingFunc = true;
                         doneParsing = false;
                     }
@@ -132,9 +258,10 @@ namespace cryptscript
                         // check for loops
                         loopType = tokens[0].Type;
                         loopCondition = tokens.GetRange(1, tokens.Count - 2);
-                        storedCode = new List<List<Token>>();
+                        storedCode = new List<Line>();
                         parsingLoop = true;
                         doneParsing = false;
+                        loopStartLine = lineNumber;
                     }
                     else if(tokens.Count > 1 && tokens[0].Type == TokenType.Return && inSubParser)
                     {
@@ -148,6 +275,7 @@ namespace cryptscript
                     else
                     {
                         result = EvaluateExpression(tokens).Result();
+
                         // if in a function, still evaluate but don't return the result
                         if(inSubParser)
                         {
@@ -157,23 +285,17 @@ namespace cryptscript
                 }
             }
 
-            if(tokens[0].Type == TokenType.Wallet)
+            if(tokens.Count > 0 && tokens[0].Type == TokenType.Wallet)
             {
                 // check for wallet address
                 Interpreter.WalletAddr.Reference = new String(tokens[0].Value);
                 result = null;
             }
 
-            if(result is Error)
-            {
-                Interpreter.ThrowError((Error) result);
-                return null;
-            }
-
             if(doneParsing && parsingFunc)
             {
                 // when a function is finished parsing
-                IDs.SetReference(routineName, new Routine(storedCode, storedArgs));
+                IDs.SetReference(routineName, new Routine(routineName, storedCode, storedArgs));
                 parsingFunc = false;
             }
 
@@ -181,20 +303,36 @@ namespace cryptscript
             {
                 // when a loop is finished parsing
                 Parser loopParser = new Parser(IDs);
+                IObject loopBoolean;
                 switch(loopType)
                 {
                     case TokenType.If:
-                        List<List<Token>> ifCode = storedCode;
-                        List<List<Token>> elseCode = new List<List<Token>>();
+                        List<Line> ifCode = storedCode;
+                        List<Line> elseCode = new List<Line>();
+                        int numLoops = 0;
                         for(int i = 0; i < storedCode.Count; i++)
                         {
-                            List<Token> line = storedCode[i];
+                            List<Token> lineHere = storedCode[i].Tokens;
                             // check for else block
-                            if(line.Count == 1 && line[0].Type == TokenType.Else)
+                            if(Token.LoopTokens.Contains(lineHere[0].Type))
+                            {
+                                numLoops++;
+                            }
+                            if(lineHere[0].Type == TokenType.End && numLoops >= 0)
+                            {
+                                numLoops--;
+                            }
+                            if(lineHere.Count == 1 && lineHere[0].Type == TokenType.Else && numLoops == 0)
                             {
                                 ifCode = storedCode.GetRange(0, i);
                                 elseCode = storedCode.GetRange(i + 1, storedCode.Count - i - 1);
                             }
+                        }
+
+                        loopBoolean = EvaluateExpression(loopCondition).Result();
+                        if(loopBoolean == null)
+                        {
+                            return null;
                         }
 
                         if(Expression.ToBool(EvaluateExpression(loopCondition).Result()))
@@ -207,26 +345,38 @@ namespace cryptscript
                         }
                         else
                         {
-                            storedCode = new List<List<Token>>();
+                            storedCode = new List<Line>();
                         }
 
-                        foreach(List<Token> line in storedCode)
+                        foreach(Line lineHere in storedCode)
                         {
-                            result = loopParser.Parse(line, true);
+                            result = loopParser.Parse(lineHere, true);
                             if(inSubParser && result != null)
                             {
                                 return result;
+                            }
+
+                            if(breakOut)
+                            {
+                                break;
                             }
                         }
 
                         break;
 
                     case TokenType.While:
+                        lineNumber = loopStartLine;
+                        loopBoolean = EvaluateExpression(loopCondition).Result();
+                        if(loopBoolean == null)
+                        {
+                            return null;
+                        }
+
                         while(Expression.ToBool(EvaluateExpression(loopCondition).Result()))
                         {
-                            foreach(List<Token> line in storedCode)
+                            foreach(Line lineHere in storedCode)
                             {
-                                result = loopParser.Parse(new List<Token>(line), true);
+                                result = loopParser.Parse(lineHere, true);
                                 if(inSubParser && result != null)
                                 {
                                     return result;
@@ -244,6 +394,13 @@ namespace cryptscript
                                 breakOut = false;
                                 break;
                             }
+
+                            lineNumber = loopStartLine;
+                            loopBoolean = EvaluateExpression(loopCondition).Result();
+                            if(loopBoolean == null)
+                            {
+                                return null;
+                            }
                         }
 
                         break;
@@ -260,21 +417,59 @@ namespace cryptscript
                         double start = 0;
                         double end;
                         double step = 1;
+                        IObject temp;
                         switch(loopArgs.Count)
                         {
                             case 2:
-                                end = Expression.ToDouble(EvaluateExpression(loopArgs[1]).Result());
+                                temp = EvaluateExpression(loopArgs[1]).Result();
+                                if(temp == null)
+                                {
+                                    return null;
+                                }
+
+                                end = Expression.ToDouble(temp);
                                 break;
                             
                             case 3:
-                                start = Expression.ToDouble(EvaluateExpression(loopArgs[1]).Result());
-                                end = Expression.ToDouble(EvaluateExpression(loopArgs[2]).Result());
+                                temp = EvaluateExpression(loopArgs[1]).Result();
+                                if(temp == null)
+                                {
+                                    return null;
+                                }
+
+                                start = Expression.ToDouble(temp);
+
+                                temp = EvaluateExpression(loopArgs[2]).Result();
+                                if(temp == null)
+                                {
+                                    return null;
+                                }
+                                end = Expression.ToDouble(temp);
                                 break;
                             
                             case 4:
-                                start = Expression.ToDouble(EvaluateExpression(loopArgs[1]).Result());
-                                end = Expression.ToDouble(EvaluateExpression(loopArgs[2]).Result());
-                                step = Expression.ToDouble(EvaluateExpression(loopArgs[3]).Result());
+                                temp = EvaluateExpression(loopArgs[1]).Result();
+                                if(temp == null)
+                                {
+                                    return null;
+                                }
+
+                                start = Expression.ToDouble(temp);
+                                
+                                temp = EvaluateExpression(loopArgs[2]).Result();
+                                if(temp == null)
+                                {
+                                    return null;
+                                }
+
+                                end = Expression.ToDouble(temp);
+
+                                temp = EvaluateExpression(loopArgs[3]).Result();
+                                if(temp == null)
+                                {
+                                    return null;
+                                }
+                                step = Expression.ToDouble(temp);
                                 break;
 
                             default:
@@ -297,9 +492,9 @@ namespace cryptscript
 
                         while(step > 0 && Expression.ToDouble(IDs.GetReference(varName)) < end || (step < 0 && Expression.ToDouble(IDs.GetReference(varName)) > end))
                         {
-                            foreach(List<Token> line in storedCode)
+                            foreach(Line lineHere in storedCode)
                             {
-                                result = loopParser.Parse(new List<Token>(line), true);
+                                result = loopParser.Parse(lineHere, true);
                                 if(inSubParser && result != null)
                                 {
                                     return result;
@@ -330,7 +525,7 @@ namespace cryptscript
             return result;
         }
 
-        public IExpression EvaluateExpression(List<Token> expression)
+        public Expression EvaluateExpression(List<Token> expression)
         {
             // DEBUG
             /*
@@ -348,29 +543,10 @@ namespace cryptscript
                 return new Expression((IObject) null);
             }
 
-            while(expression.Count > 0 && expression[0].Type == TokenType.LeftParenthesis && expression[expression.Count - 1].Type == TokenType.RightParenthesis)
+            while(expression.Count > 0)
             {
-                // remove parentheses around expression
-                bool hasSurroundingParens = true;
-                int numParens = 0;
-                foreach(Token t in expression.GetRange(1, expression.Count - 2))
-                {
-                    if(t.Type == TokenType.LeftParenthesis)
-                    {
-                        numParens++;
-                    }
-                    if(t.Type == TokenType.RightParenthesis)
-                    {
-                        if(numParens > 0)
-                        {
-                            numParens--;
-                        }
-                        else
-                        {
-                            hasSurroundingParens = false;
-                        }
-                    }
-                }
+                // remove redundant parentheses around expression
+                bool hasSurroundingParens = expression[0].Type == TokenType.LeftParenthesis && FindClosingBrace(expression, 0) == expression.Count - 1;
 
                 if(hasSurroundingParens)
                 {
@@ -379,132 +555,6 @@ namespace cryptscript
                 else
                 {
                     break;
-                }
-            }
-
-            for(int i = 0; i < expression.Count - 2; i++)
-            {
-                if(expression[i].Type == TokenType.ID && expression[i + 1].Type == TokenType.LeftParenthesis)
-                {
-                    // parse as function call
-
-                    // find ending parenthesis
-                    int parenEnd = i + 2;
-                    int numParens = 0;
-                    while(true)
-                    {
-                        if(expression[parenEnd].Type == TokenType.LeftParenthesis)
-                        {
-                            numParens++;
-                        }
-                        else if(expression[parenEnd].Type == TokenType.RightParenthesis)
-                        {
-                            if(numParens > 0)
-                            {
-                                numParens--;
-                            }
-                            else
-                            {
-                                break;
-                            }
-                        }
-
-                        parenEnd++;
-                        if(parenEnd >= expression.Count)
-                        {
-                            return new Expression(new Error(ErrorType.SyntaxError));
-                        }
-                    }
-
-                    Token callAsToken = new TokenGroup(TokenType.CalledFunc, expression.GetRange(i, parenEnd - i + 1));
-                    expression.RemoveRange(i, parenEnd - i + 1);
-                    expression.Insert(i, callAsToken);
-                }
-            }
-
-            for(int i = 0; i < expression.Count - 1; i++)
-            {
-                if((i == 0 || (i > 0 && !(new List<TokenType>() {TokenType.Integer, TokenType.Decimal, TokenType.Bool, 
-                    TokenType.String, TokenType.Zilch, TokenType.List, TokenType.Dict, TokenType.ID, TokenType.CalledFunc,
-                    TokenType.IndexedObj, TokenType.RightParenthesis, TokenType.RightBracket, TokenType.RightCurly
-                    }.Contains(expression[i - 1].Type)))) && expression[i].Type == TokenType.LeftBracket)
-                {
-                    // parse as explicit list declaration
-
-                    // find ending bracket
-                    int brackEnd = i + 1;
-                    int numBracks = 0;
-                    while(true)
-                    {
-                        if(expression[brackEnd].Type == TokenType.LeftBracket)
-                        {
-                            numBracks++;
-                        }
-                        else if(expression[brackEnd].Type == TokenType.RightBracket)
-                        {
-                            if(numBracks > 0)
-                            {
-                                numBracks--;
-                            }
-                            else
-                            {
-                                break;
-                            }
-                        }
-
-                        brackEnd++;
-                        if(brackEnd >= expression.Count)
-                        {
-                            return new Expression(new Error(ErrorType.SyntaxError));
-                        }
-                    }
-
-                    Token listAsToken = new TokenGroup(TokenType.List, expression.GetRange(i, brackEnd - i + 1));
-                    expression.RemoveRange(i, brackEnd - i + 1);
-                    expression.Insert(i, listAsToken);
-                }
-            }
-
-            for(int i = 1; i < expression.Count - 2; i++)
-            {
-                if(new List<TokenType>() {TokenType.Integer, TokenType.Decimal, TokenType.Bool, TokenType.String, 
-                    TokenType.Zilch, TokenType.List, TokenType.Dict, TokenType.ID, TokenType.CalledFunc,
-                    TokenType.IndexedObj}.Contains(expression[i - 1].Type) && expression[i].Type == TokenType.LeftBracket)
-                {
-                    // parse as indexing an object
-
-                    // find ending bracket
-                    int brackEnd = i + 1;
-                    int numBracks = 0;
-                    while(true)
-                    {
-                        if(expression[brackEnd].Type == TokenType.LeftBracket)
-                        {
-                            numBracks++;
-                        }
-                        else if(expression[brackEnd].Type == TokenType.RightBracket)
-                        {
-                            if(numBracks > 0)
-                            {
-                                numBracks--;
-                            }
-                            else
-                            {
-                                break;
-                            }
-                        }
-
-                        brackEnd++;
-                        if(brackEnd >= expression.Count)
-                        {
-                            return new Expression(new Error(ErrorType.SyntaxError));
-                        }
-                    }
-
-                    Token itemAsToken = new TokenGroup(TokenType.IndexedObj, expression.GetRange(i - 1, brackEnd - i + 2));
-                    expression.RemoveRange(i - 1, brackEnd - i + 2);
-                    expression.Insert(i - 1, itemAsToken);
-                    i--;
                 }
             }
 
@@ -522,7 +572,8 @@ namespace cryptscript
             switch(expression.Count)
             {
                 case 0:
-                    return new Expression(new Error(ErrorType.SyntaxError));
+                    Interpreter.ThrowError(new Error(ErrorType.SyntaxError));
+                    return new Expression((IObject) null);
 
                 case 1:
                     return new Expression(CreateFromToken(expression[0]));
@@ -541,14 +592,16 @@ namespace cryptscript
                                                   OperationType.NOT);
 
                         default:
-                            return new Expression(new Error(ErrorType.SyntaxError));
+                            Interpreter.ThrowError(new Error(ErrorType.SyntaxError));
+                            return new Expression((IObject) null);
 
                     }
                 
                 case 3:
                     if(!Token.OperationOf.ContainsKey(expression[1].Type))
                     {
-                        return new Expression(new Error(ErrorType.SyntaxError));
+                        Interpreter.ThrowError(new Error(ErrorType.SyntaxError));
+                        return new Expression((IObject) null);
                     }
                     else
                     {
@@ -601,7 +654,7 @@ namespace cryptscript
                         step++;
                     }
 
-                    IExpression result;
+                    Expression result;
                     if(index >= 0)
                     {
                         if(expression[index].Type == TokenType.NOT)
@@ -619,7 +672,8 @@ namespace cryptscript
                     }
                     else
                     {
-                        result = new Expression(new Error(ErrorType.SyntaxError));
+                        Interpreter.ThrowError(new Error(ErrorType.SyntaxError));
+                        result = new Expression((IObject) null);
                     }
 
                     return result;
@@ -674,7 +728,7 @@ namespace cryptscript
 
         public IObject CreateFromToken(Token t)
         {
-            IObject result = new Error(ErrorType.SyntaxError);
+            IObject result = null;
 
             switch(t.Type)
             {
@@ -717,7 +771,7 @@ namespace cryptscript
                         foreach(List<Token> exp in ParseCommaSyntax(((TokenGroup) t).Tokens))
                         {
                             IObject value = EvaluateExpression(exp).Result();
-                            if(value is Error)
+                            if(value == null)
                             {
                                 return value;
                             }
@@ -729,9 +783,9 @@ namespace cryptscript
                     result = new IterList(listValues);
                     break;
 
-                case TokenType.CalledFunc:
+                case TokenType.CalledObj:
                     List<Token> tokens = ((TokenGroup) t).Tokens;
-                    IObject calledObj = IDs.GetReference(tokens[0].Value);
+                    IObject calledObj = CreateFromToken(tokens[0]);
                     if(calledObj is ICallable)
                     {
                         List<IObject> args = new List<IObject>();
@@ -741,7 +795,7 @@ namespace cryptscript
                             foreach(List<Token> argExpression in ParseCommaSyntax(tokens.GetRange(2, tokens.Count - 3)))
                             {
                                 IObject arg = EvaluateExpression(argExpression).Result();
-                                if(arg is Error)
+                                if(arg == null)
                                 {
                                     return arg;
                                 }
@@ -754,7 +808,8 @@ namespace cryptscript
                     }
                     else
                     {
-                        return new Error(ErrorType.IdNotFoundError);
+                        Interpreter.ThrowError(new Error(ErrorType.IdNotFoundError));
+                        return null;
                     }
 
                     break;
@@ -763,30 +818,49 @@ namespace cryptscript
                     TokenGroup tg = (TokenGroup) t;
                     IObject indexedObj = CreateFromToken(tg.Tokens[0]);
                     IObject indexObj = EvaluateExpression(tg.Tokens.GetRange(2, tg.Tokens.Count - 3)).Result();
-                    if(indexObj is Error)
+                    if(indexObj == null)
                     {
-                        return indexObj;
+                        return null;
                     }
 
-                    if(!(indexedObj is Iterable))
+                    if(!(indexedObj is Iterable || indexedObj is String))
                     {
-                        return new Error(ErrorType.TypeMismatchError);
+                        Interpreter.ThrowError(new Error(ErrorType.TypeMismatchError));
+                        return null;
                     }
                     else
                     {
-                        if(indexedObj is IterList && !(indexObj is Integer))
+                        if((indexedObj is IterList || indexedObj is String) && !(indexObj is Integer))
                         {
-                            return new Error(ErrorType.TypeMismatchError);
+                            Interpreter.ThrowError(new Error(ErrorType.TypeMismatchError));
+                            return null;
                         }
 
                         int index = Expression.ToInt(indexObj);
 
                         switch(indexedObj)
                         {
-                            case IterList iter:
-                                if(iter.RealIndex(index) >= iter.Length)
+                            case String iter:
+                                string objString = iter.Value.ToString();
+                                if(index < 0)
                                 {
-                                    return new Error(ErrorType.IndexOutOfBoundsError);
+                                    index = index + objString.Length;
+                                }
+                                if(index >= objString.Length || index < 0)
+                                {
+                                    Interpreter.ThrowError(new Error(ErrorType.IndexOutOfBoundsError));
+                                    return null;
+                                }
+
+                                result = new String(objString.Substring(index, 1));
+
+                                break;
+
+                            case IterList iter:
+                                if(iter.RealIndex(index) >= iter.Length || iter.RealIndex(index) < 0)
+                                {
+                                    Interpreter.ThrowError(new Error(ErrorType.IndexOutOfBoundsError));
+                                    return null;
                                 }
 
                                 result = iter.Get(index);
@@ -794,6 +868,7 @@ namespace cryptscript
                                 break;
 
                             case IterDict iter:
+                                // implement dictionary indexing
                                 break;
                         }
                     }
@@ -838,6 +913,44 @@ namespace cryptscript
             }
 
             return result;
+        }
+
+        public static int FindClosingBrace(List<Token> tokens, int openBrace)
+        {
+            // returns the index of the closing brace to the given one
+            // if none is found, returns -1
+
+            IDictionary<TokenType,TokenType> altBraces = new Dictionary<TokenType, TokenType>()
+            {
+                { TokenType.LeftParenthesis,    TokenType.RightParenthesis },
+                { TokenType.LeftBracket,        TokenType.RightBracket },
+                { TokenType.LeftCurly,          TokenType.RightCurly },
+            };
+
+            TokenType givenBrace = tokens[openBrace].Type;
+            TokenType targetBrace = altBraces[givenBrace];
+
+            int numBraces = 0;
+            for(int i = openBrace + 1; i < tokens.Count; i++)
+            {
+                if(tokens[i].Type == givenBrace)
+                {
+                    numBraces++;
+                }
+                else if(tokens[i].Type == targetBrace)
+                {
+                    if(numBraces > 0)
+                    {
+                        numBraces--;
+                    }
+                    else
+                    {
+                        return i;
+                    }
+                }
+            }
+
+            return -1;
         }
     }
 }

@@ -1,4 +1,6 @@
 using System;
+using System.Text;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Threading;
 
@@ -6,7 +8,6 @@ namespace cryptscript
 {
     public static class BetterReadline
     {
-        private static bool Interrupted = false;
         private static List<ConsoleKey> IgnoredKeys = new List<ConsoleKey>()
         {
             ConsoleKey.LeftArrow,
@@ -21,43 +22,69 @@ namespace cryptscript
 
         public static string Readline()
         {
-            Interrupted = false;
-            ConsoleKeyInfo keyInfo;
-            string input = "";
-            do
+            Console.TreatControlCAsInput = true;
+            var queue = new BlockingCollection<ConsoleKeyInfo>();
+            EventWaitHandle LoopExit = new AutoResetEvent(false);
+            EventWaitHandle StartRead = new ManualResetEvent(false);
+            bool interrupted = false;
+
+            new Thread(() =>
             {
-                while(!Console.KeyAvailable)
+                while(true) 
                 {
-                    Thread.Sleep(10);
-                    if(Interrupted)
-                    {
-                        Console.WriteLine();
-                        return null;
-                    }
+                    StartRead.Reset();
+                    StartRead.WaitOne();
+                    if(interrupted) { break; }
+                    queue.Add(Console.ReadKey(true));
                 }
 
-                keyInfo = Console.ReadKey(true);
-                if(keyInfo.Key == ConsoleKey.Backspace)
-                {
-                    if(input.Length > 0)
-                    {
-                        input = input.Remove(input.Length - 1, 1);
-                        Console.Write("\b \b");
-                    }
-                }
-                else if(!IgnoredKeys.Contains(keyInfo.Key))
-                {
-                    input += keyInfo.KeyChar;
-                    Console.Write(keyInfo.KeyChar);
-                }
+                LoopExit.Set();
             }
-            while(!Interrupted && keyInfo.Key != ConsoleKey.Enter);
+            ) { IsBackground = true }.Start();
+
+            StringBuilder input = new StringBuilder();
+            ConsoleKeyInfo cki;
+            StartRead.Set();
+            while(true)
+            {
+                if(queue.TryTake(out cki, TimeSpan.FromMilliseconds(20)))
+                {
+                    if(cki.Key == ConsoleKey.Enter)
+                    {
+                        break;
+                    }
+
+                    if((cki.Modifiers & ConsoleModifiers.Control) != 0 && cki.Key == ConsoleKey.C)
+                    {
+                        Interpreter.ThrowError(new Error(ErrorType.KeyboardInterrupt));
+                        break;
+                    }
+
+                    if(cki.Key == ConsoleKey.Backspace)
+                    {
+                        if(input.Length > 0)
+                        {
+                            input.Remove(input.Length - 1, 1);
+                            Console.Write("\b \b");
+                        }
+                    }
+                    else if(!IgnoredKeys.Contains(cki.Key))
+                    {
+                        input.Append(cki.KeyChar);
+                        Console.Write(cki.KeyChar);
+                    }
+                }
+                StartRead.Set();
+            }
+
+            interrupted = true;
+            Thread.Sleep(1);
+            StartRead.Set();
+            LoopExit.WaitOne();
             Console.WriteLine();
+            Console.TreatControlCAsInput = false;
 
-            return input;
+            return input.ToString();
         }
-
-        public static void Interrupt()
-            => Interrupted = true;
     }
 }

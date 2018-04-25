@@ -11,11 +11,11 @@ namespace cryptscript
 
         public Error(ErrorType type)
         {
-            LineNumber = Interpreter.LineNumber;
+            LineNumber = Parser.lineNumber;
             Type = type;
 
             string msg = "";
-            if(LineNumber > 0)
+            if(!Interpreter.IsInteractive)
             {
                 msg += System.String.Format("{0} on line {1}", Type, LineNumber);
             }

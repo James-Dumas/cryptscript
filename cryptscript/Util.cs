@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace cryptscript
 {
@@ -18,7 +17,21 @@ namespace cryptscript
             return input == null ? "" : input.Trim();
         }
 
-        public static string GetInput() => GetInput("");
+        public static string EscapeString(string literal)
+        {
+            string escaped = literal.Replace(@"\a", "\a");
+            escaped = escaped.Replace(@"\b", "\b");
+            escaped = escaped.Replace(@"\f", "\f");
+            escaped = escaped.Replace(@"\n", "\n");
+            escaped = escaped.Replace(@"\r", "\r");
+            escaped = escaped.Replace(@"\t", "\t");
+            escaped = escaped.Replace(@"\v", "\v");
+            escaped = escaped.Replace(@"\\", "\\");
+            escaped = escaped.Replace(@"\'", "\'");
+            escaped = escaped.Replace(@"\""", "\"");
+
+            return escaped;
+        }
 
         /// <summary>
         /// Prompts the user for a key input

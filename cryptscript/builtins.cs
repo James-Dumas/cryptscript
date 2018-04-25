@@ -56,6 +56,18 @@ namespace cryptscript
                             Console.WriteLine(args[0].Repr());
                             break;
                         
+                        case 2:
+                            if(Expression.ToBool(args[1]))
+                            {
+                                Console.Write(args[0].Repr());
+                            }
+                            else
+                            {
+                                Console.WriteLine(args[0].Repr());
+                            }
+
+                            break;
+                        
                         default:
                             result = new Error(ErrorType.InvalidArgumentError);
                             break;
@@ -70,12 +82,7 @@ namespace cryptscript
                     }
                     else
                     {
-                        if(args.Count == 1)
-                        {
-                            Console.Write(args[0].Value.ToString());
-                        }
-
-                        result = new String(Util.GetInput());
+                        result = new String(Util.GetInput(args.Count == 1 ? args[0].Value.ToString() : ""));
                     }
 
                     break;
@@ -162,7 +169,7 @@ namespace cryptscript
                     {
                         result = new Error(ErrorType.InvalidArgumentError);
                     }
-                    else if(!(args[0] is String) || !(args[1] is Integer) || !(args[2] is Integer))
+                    else if(!(args[0] is String && args[1] is Integer && args[2] is Integer))
                     {
                         result = new Error(ErrorType.TypeMismatchError);
                     }
@@ -187,6 +194,82 @@ namespace cryptscript
                             else
                             {
                                 result = new String(str.Substring(index1, index2 - index1));
+                            }
+                        }
+                    }
+
+                    break;
+
+                case BuiltInRoutine.Insert:
+                    if(!(args.Count == 2 || args.Count == 3))
+                    {
+                        result = new Error(ErrorType.InvalidArgumentError);
+                    }
+                    else
+                    {
+                        switch(args.Count)
+                        {
+                            case 2:
+                                if(!(args[0] is IterList))
+                                {
+                                    result = new Error(ErrorType.TypeMismatchError);
+                                }
+                                else
+                                {
+                                    IterList list = (IterList) args[0];
+                                    int index = list.Length;
+                                    list.Insert(index, args[1]);
+                                }
+
+                                break;
+
+                            case 3:
+                                if(!(args[0] is IterList && args[1] is Integer))
+                                {
+                                    result = new Error(ErrorType.TypeMismatchError);
+                                }
+                                else
+                                {
+                                    IterList list = (IterList) args[0];
+                                    int index = list.RealIndex(Expression.ToInt(args[1]));
+                                    if(index > list.Length || index < 0)
+                                    {
+                                        result = new Error(ErrorType.IndexOutOfBoundsError);
+                                    }
+                                    else
+                                    {
+                                        list.Insert(index, args[2]);
+                                    }
+                                }
+
+                                break;
+                        }
+                    }
+
+                    break;
+
+                case BuiltInRoutine.Pop:
+                    if(args.Count != 2)
+                    {
+                        result = new Error(ErrorType.InvalidArgumentError);
+                    }
+                    else
+                    {
+                        if(!(args[0] is IterList && args[1] is Integer))
+                        {
+                            result = new Error(ErrorType.TypeMismatchError);
+                        }
+                        else
+                        {
+                            IterList list = (IterList) args[0];
+                            int index = list.RealIndex(Expression.ToInt(args[1]));
+                            if(index >= list.Length || index < 0)
+                            {
+                                result = new Error(ErrorType.IndexOutOfBoundsError);
+                            }
+                            else
+                            {
+                                result = list.Pop(index);
                             }
                         }
                     }
@@ -246,6 +329,10 @@ namespace cryptscript
                         {
                             type = "dict";
                         }
+                        else if(obj is ICallable)
+                        {
+                            type = "routine";
+                        }
 
                         result = new String(type);
                     }
@@ -264,6 +351,12 @@ namespace cryptscript
                     
                     break;
 
+            }
+
+            if(result is Error)
+            {
+                Interpreter.ThrowError((Error) result);
+                result = null;
             }
 
             return result;
@@ -286,8 +379,10 @@ namespace cryptscript
         String,
         Strip,
         Slice,
+        Insert,
+        Pop,
         Length,
         Type,
-        Exit
+        Exit,
     }
 }

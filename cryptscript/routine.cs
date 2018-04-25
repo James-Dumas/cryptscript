@@ -9,11 +9,13 @@ namespace cryptscript
 
     public class Routine : Object, ICallable
     {
+        private string Name { get; set; }
         private List<string> Arguments { get; set; }
-        private List<List<Token>> Code { get; set; }
+        private List<Line> Code { get; set; }
 
-        public Routine(List<List<Token>> code, List<string> args)
+        public Routine(string name, List<Line> code, List<string> args)
         {
+            Name = name;
             Arguments = args;
             Code = code;
         }
@@ -27,23 +29,26 @@ namespace cryptscript
 
             if(args.Count > Arguments.Count)
             {
-                return new Error(ErrorType.InvalidArgumentError);
+                Interpreter.ThrowError(new Error(ErrorType.InvalidArgumentError));
+                return null;
             }
 
             // add arguments to local id group
             IdentifierGroup locals = new IdentifierGroup();
             for(int i = 0; i < Arguments.Count; i++)
             {
-                locals.AddID(Arguments[i]);
                 if(args.Count > i)
                 {
                     locals.SetReference(Arguments[i], args[i]);
                 }
             }
 
+            // add self to local id group
+            locals.SetReference(Name, this);
+
             Parser funcParser = new Parser(locals);
             IObject result = null;
-            foreach(List<Token> line in Code)
+            foreach(Line line in Code)
             {
                 result = funcParser.Parse(line, true);
                 if(result != null || Interpreter.StopExecution) { break; }

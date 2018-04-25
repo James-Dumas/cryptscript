@@ -7,13 +7,11 @@ namespace cryptscript
     {
         #region Public Fields
 
-        public string Text { get; set; }
-
         public static Dictionary<string, TokenType> Tokens { get; } = new Dictionary<string, TokenType>()
         {
             { " *#![a-zA-Z0-9]+",                 TokenType.Wallet },
-            { " *\"[^\"]*\"",                     TokenType.String },
-            { " *'[^']*'",                        TokenType.String },
+            { @" *""((\\"")|[^""])*""",           TokenType.String },
+            { @" *'((\\')|[^'])*'",               TokenType.String },
             { @" *\+",                            TokenType.Addition },
             { " *-",                              TokenType.Subraction },
             { @" *\*",                            TokenType.Multiplication },
@@ -42,6 +40,7 @@ namespace cryptscript
             { @" *\{",                            TokenType.LeftCurly },
             { @" *\}",                            TokenType.RightCurly },
             { " *,",                              TokenType.Comma },
+            { " *:",                              TokenType.Colon },
             { " *~[^#]*",                         TokenType.Comment },
             { " *(?i)(given that)",               TokenType.If },
             { " *(?i)(do)",                       TokenType.Do },
@@ -53,6 +52,9 @@ namespace cryptscript
             { " *(?i)(concur)",                   TokenType.End },
             { " *(?i)(cease)",                    TokenType.Break },
             { " *(?i)(submit)",                   TokenType.Return },
+            { " *(?i)(attempt)",                  TokenType.Try },
+            { " *(?i)(upon)",                     TokenType.Catch },
+            { " *(?i)(utilize)",                  TokenType.Import },
             { " *(?i)(zilch)",                    TokenType.Zilch },
             { " *(?i)(true)",                     TokenType.Bool },
             { " *(?i)(false)",                    TokenType.Bool },
@@ -64,30 +66,25 @@ namespace cryptscript
 
         #endregion Public Fields
 
-        public Lexer(string text)
-        {
-            Text = text.Trim();
-        }
-
         /// <summary>
         /// Convert string of text into tokens
         /// </summary>
         /// <returns>List of <see cref="Token"/>s</returns>
-        public List<Token> Tokenize()
+        public List<Token> Tokenize(string text)
         {
             List<Token> tokens = new List<Token>();
 
-            for (int i = 0; i < Text.Length;)
+            for (int i = 0; i < text.Length;)
             {
                 Token newToken = new Token(TokenType.Unknown, "");
                 bool match = false;
                 bool error = false;
-                int end = Text.Length;
+                int end = text.Length;
 
                 while (!match && !error)
                 {
                     // try to match every token's regex to a substring of the text that is decreasing in length
-                    string subStr = Text.Substring(i, end - i);
+                    string subStr = text.Substring(i, end - i);
                     error = end <= i;
                     if (error) { break; }
 
@@ -113,6 +110,19 @@ namespace cryptscript
             }
 
             return tokens;
+        }
+    }
+
+    public class Line
+    {
+        // basic container class for keeping track of line numbers
+        public List<Token> Tokens { get; set; }
+        public int LineNum { get; set; }
+
+        public Line(List<Token> tokens, int lineNum)
+        {
+            Tokens = tokens;
+            LineNum = lineNum;
         }
     }
 }

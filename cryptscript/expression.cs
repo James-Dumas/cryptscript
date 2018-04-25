@@ -3,12 +3,7 @@ using System.Collections.Generic;
 
 namespace cryptscript
 {
-    public interface IExpression
-    {
-        IObject Result();
-    }
-
-    public class Expression : IExpression
+    public class Expression
     {
         #region Operation Data
 
@@ -38,7 +33,7 @@ namespace cryptscript
         /// </summary>
         /// <param name="value">The value to operate on</param>
         /// <param name="operation">The type of operation to perform</param>
-        public Expression(IExpression value)
+        public Expression(Expression value)
             : this(value, value, OperationType.None) { }
 
         public Expression(IObject value)
@@ -54,7 +49,7 @@ namespace cryptscript
         /// <param name="left">The left value</param>
         /// <param name="right">The right value</param>
         /// <param name="operation">The type of operation to perform</param>
-        public Expression(IExpression left, IExpression right, OperationType operation)
+        public Expression(Expression left, Expression right, OperationType operation)
         {
             Left = left.Result();
             Right = right.Result();
@@ -68,6 +63,9 @@ namespace cryptscript
         /// </summary>
         public IObject Result()
         {
+            // If an error has occured (value == null), pass it up the stack
+            if (Left == null || Right == null || Interpreter.StopExecution) return null;
+
             // Check if the expression is a base expression
             if (IsBaseExpression)
             {
@@ -81,10 +79,6 @@ namespace cryptscript
 
             object result = null;
 
-            // If an error has occured, pass it up the stack
-            if (Left is Error) return Left;
-            if (Right is Error) return Right;
-
             if((Left is String || Right is String)
                     && !(new List<OperationType> {OperationType.Addition, OperationType.Equal, OperationType.Inequal, OperationType.NOT,
                                                   OperationType.AND, OperationType.OR, OperationType.XOR}.Contains(Operation)))
@@ -95,7 +89,8 @@ namespace cryptscript
                     && !(new List<OperationType> {OperationType.Equal, OperationType.Inequal, OperationType.NOT,
                                             OperationType.AND, OperationType.OR, OperationType.XOR}.Contains(Operation)))
             {
-                return new Error(ErrorType.TypeMismatchError);
+                Interpreter.ThrowError(new Error(ErrorType.TypeMismatchError));
+                return null;
             }
 
             bool returnDecimal = Left is Decimal || Right is Decimal;
@@ -107,14 +102,38 @@ namespace cryptscript
 
                     // Check for a type mismatch
                     if (!(Left is String) && Right is String)
-                        return new Error(ErrorType.TypeMismatchError);
+                    {
+                        Interpreter.ThrowError(new Error(ErrorType.TypeMismatchError));
+                        return null;
+                    }
 
-                    // Return either a concatenated or an added number
-                    result = Left is String
-                        ? (object)(Left.Value.ToString() + Right.Value.ToString())
-                        : returnDecimal
-                            ? ToDouble(Left) + ToDouble(Right)
-                            : ToInt(Left) + ToInt(Right);
+                    if(Left is IterList && Right is IterList)
+                    {
+                        List<IObject> combinedItems = new List<IObject>();
+                        for(int i = 0; i < ((IterList) Left).Length; i++)
+                        {
+                            // add first list's items
+                            combinedItems.Add(((IterList) Left).Get(i));
+                        }
+
+                        for(int i = 0; i < ((IterList) Right).Length; i++)
+                        {
+                            // add second list's items
+                            combinedItems.Add(((IterList) Right).Get(i));
+                        }
+
+                        result = new IterList(combinedItems);
+                    }
+                    else
+                    {
+                        // Return either a concatenated or an added number
+                        result = Left is String
+                            ? (object)(Left.Value.ToString() + Right.Value.ToString())
+                            : returnDecimal
+                                ? ToDouble(Left) + ToDouble(Right)
+                                : ToInt(Left) + ToInt(Right);
+                    }
+
                     break;
 
                 case OperationType.Subraction:
@@ -144,7 +163,8 @@ namespace cryptscript
                     }
                     catch(System.DivideByZeroException)
                     {
-                        return new Error(ErrorType.DivisionByZeroError);
+                        Interpreter.ThrowError(new Error(ErrorType.DivisionByZeroError));
+                        return null;
                     }
 
                     break;
@@ -153,12 +173,13 @@ namespace cryptscript
                     try
                     {
                         result = returnDecimal
-                            ? ToDouble(Left) % ToDouble(Right)
-                            : ToInt(Left) % ToInt(Right);
+                            ? (ToDouble(Left) % ToDouble(Right) + ToDouble(Right)) % ToDouble(Right)
+                            : (ToInt(Left) % ToInt(Right) + ToInt(Right)) % ToInt(Right);
                     }
                     catch(System.DivideByZeroException)
                     {
-                        return new Error(ErrorType.DivisionByZeroError);
+                        Interpreter.ThrowError(new Error(ErrorType.DivisionByZeroError));
+                        return null;
                     }
 
                     break;
@@ -212,7 +233,7 @@ namespace cryptscript
                     break;
             }
 
-            return Parser.CreateObject(result);
+            return result is IObject ? (IObject) result : Parser.CreateObject(result);
         }
 
         /// <summary>
