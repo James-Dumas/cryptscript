@@ -6,6 +6,7 @@ namespace cryptscript
     public interface IObject
     {
         object Value { get; }
+        string Repr(bool showQuotes);
         string Repr();
     }
 
@@ -26,6 +27,8 @@ namespace cryptscript
         {
             return Value.ToString();
         }
+
+        public virtual string Repr(bool showQuotes) => Repr();
     }
 
     /// <summary>
@@ -50,6 +53,20 @@ namespace cryptscript
     public class String : Object, IObject
     {
         public String(object value) => Value = Convert.ToString(value);
+
+        public override string Repr(bool showQuotes)
+        {
+            if(showQuotes)
+            {
+                return "\"" + Value.ToString() + "\"";
+            }
+            else
+            {
+                return Value.ToString();
+            }
+        }
+
+        public override string Repr() => Repr(false);
     }
 
     /// <summary>

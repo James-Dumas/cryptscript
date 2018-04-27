@@ -200,31 +200,30 @@ namespace cryptscript
                                     return null;
                                 }
 
-                                if(!(indexedObj is Iterable) || (indexedObj is IterList && !(indexObj is Integer)))
+                                if(!(indexedObj is Iterable) || (indexedObj is IterList && !(indexObj is Integer)) 
+                                || (indexedObj is IterDict && !(indexObj is Integer || indexObj is Decimal || indexObj is String || indexObj is Boolean)))
                                 {
                                     Interpreter.ThrowError(new Error(ErrorType.TypeMismatchError));
                                     return null;
                                 }
 
-                                int index = Expression.ToInt(indexObj);
-
                                 switch(indexedObj)
                                 {
                                     case IterList iter:
+                                        int index = Expression.ToInt(indexObj);
                                         if(iter.RealIndex(index) >= iter.Length)
                                         {
                                             Interpreter.ThrowError(new Error(ErrorType.IndexOutOfBoundsError));
                                             return null;
                                         }
-                                        else
-                                        {
-                                            iter.Set(index, expressionResult);
-                                        }
+
+                                        iter.Set(index, expressionResult);
 
                                         break;
 
                                     case IterDict iter:
-                                        // implement dictionary indexing
+                                        iter.Set(indexObj, expressionResult);
+
                                         break;
                                 }
                             }
@@ -798,9 +797,10 @@ namespace cryptscript
                 
                 case TokenType.List:
                     List<IObject> listValues = new List<IObject>();
-                    if(((TokenGroup) t).Tokens.Count > 0)
+                    TokenGroup tg = (TokenGroup) t;
+                    if(tg.Tokens.Count > 0)
                     {
-                        foreach(List<Token> exp in ParseCommaSyntax(((TokenGroup) t).Tokens))
+                        foreach(List<Token> exp in ParseCommaSyntax(tg.Tokens))
                         {
                             IObject value = EvaluateExpression(exp).Result();
                             if(value == null)
@@ -813,6 +813,55 @@ namespace cryptscript
                     }
 
                     result = new IterList(listValues);
+                    break;
+
+                case TokenType.Dict:
+                    List<IObject> keys = new List<IObject>();
+                    List<IObject> values = new List<IObject>();
+                    IterDict dict = new IterDict(keys, values);
+                    tg = (TokenGroup) t;
+                    if(tg.Tokens.Count > 0)
+                    {
+                        foreach(List<Token> kv in ParseCommaSyntax(tg.Tokens))
+                        {
+                            int colonIndex = -1;
+                            for(int i = 0; i < kv.Count; i++)
+                            {
+                                if(kv[i].Type == TokenType.Colon)
+                                {
+                                    if(colonIndex != -1)
+                                    {
+                                        Interpreter.ThrowError(new Error(ErrorType.SyntaxError));
+                                        return null;
+                                    }
+
+                                    colonIndex = i;
+                                }
+                            }
+
+                            if(colonIndex == -1 || kv.Count < 3)
+                            {
+                                Interpreter.ThrowError(new Error(ErrorType.SyntaxError));
+                                return null;
+                            }
+
+                            IObject key = EvaluateExpression(kv.GetRange(0, colonIndex)).Result();
+                            if(key == null)  return null;
+                            IObject value = EvaluateExpression(kv.GetRange(colonIndex + 1, kv.Count - colonIndex - 1)).Result();
+                            if(value == null)  return null;
+
+                            if(dict.HasKey(key))
+                            {
+                                Interpreter.ThrowError(new Error(ErrorType.KeyError));
+                                return null;
+                            }
+
+                            dict.Set(key, value);
+                        }
+                    }
+
+                    result = dict;
+
                     break;
 
                 case TokenType.CalledObj:
@@ -847,7 +896,7 @@ namespace cryptscript
                     break;
                 
                 case TokenType.IndexedObj:
-                    TokenGroup tg = (TokenGroup) t;
+                    tg = (TokenGroup) t;
                     IObject indexedObj = CreateFromToken(tg.Tokens[0]);
                     IObject indexObj = EvaluateExpression(tg.Tokens.GetRange(2, tg.Tokens.Count - 3)).Result();
                     if(indexObj == null)
@@ -900,7 +949,13 @@ namespace cryptscript
                                 break;
 
                             case IterDict iter:
-                                // implement dictionary indexing
+                                if(!iter.HasKey(indexObj))
+                                {
+                                    Interpreter.ThrowError(new Error(ErrorType.KeyError));
+                                    return null;
+                                }
+
+                                result = iter.Get(indexObj);
                                 break;
                         }
                     }

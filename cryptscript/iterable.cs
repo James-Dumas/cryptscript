@@ -18,15 +18,15 @@ namespace cryptscript
     {
         public IterList(List<IObject> items) : base(items) {}
 
+        // pre-req: index is valid for the list
         public IObject Get(int index)
             => Items[RealIndex(index)];
 
+        // pre-req: index is valid for the list
         public void Set(int index, IObject obj)
             => Items[RealIndex(index)] = obj;
 
-        public void Append(IObject obj)
-            => Items.Add(obj);
-
+        // pre-req: index is valid for the list
         public IObject Pop(int index)
         {
             IObject obj = Items[RealIndex(index)];
@@ -34,6 +34,7 @@ namespace cryptscript
             return obj;
         }
 
+        // pre-req: index is valid for the list
         public void Insert(int index, IObject obj)
             => Items.Insert(RealIndex(index), obj);
 
@@ -47,7 +48,7 @@ namespace cryptscript
             string repr = "[";
             for(int i = 0; i < Length; i++)
             {
-                repr += Items[i].Repr();
+                repr += Items[i].Repr(true);
                 if(i + 1 < Length)
                 {
                     repr += ", ";
@@ -57,6 +58,8 @@ namespace cryptscript
             repr += "]";
             return repr;
         }
+
+        public override string Repr(bool showQuotes) => Repr();
     }
 
     public class IterDict : Iterable, IObject
@@ -68,23 +71,41 @@ namespace cryptscript
             Keys = keys;
         }
 
-        public IObject Get(IObject key)
+        public bool HasKey(IObject key)
         {
-            if(Keys.Contains(key))
+            bool result = false;
+            foreach(IObject k in Keys)
             {
-                return Items[Keys.IndexOf(key)];
+                result = result || k.Value.Equals(key.Value);
             }
-            else
-            {
-                return new Error(ErrorType.KeyError);
-            }
+
+            return result;
         }
 
+        private int GetIndex(IObject key)
+        {
+            int result = -1;
+            for(int i = 0; i < Length; i++)
+            {
+                if(Keys[i].Value.Equals(key.Value))
+                {
+                    result = i;
+                }
+            }
+
+            return result;
+        }
+
+        // pre-req: key is in the dictionary
+        public IObject Get(IObject key)
+            => Items[GetIndex(key)];
+
+        // pre-req: key is immutable
         public void Set(IObject key, IObject obj)
         {
-            if(Keys.Contains(key))
+            if(HasKey(key))
             {
-                Items[Keys.IndexOf(key)] = obj;
+                Items[GetIndex(key)] = obj;
             }
             else
             {
@@ -93,20 +114,14 @@ namespace cryptscript
             }
         }
 
+        // pre-req: key is in the dictionary
         public IObject Pop(IObject key)
         {
-            if(Keys.Contains(key))
-            {
-                int index = Keys.IndexOf(key);
-                IObject obj = Items[index];
-                Keys.RemoveAt(index);
-                Items.RemoveAt(index);
-                return obj;
-            }
-            else
-            {
-                return new Error(ErrorType.KeyError);
-            }
+            int index = Keys.IndexOf(key);
+            IObject obj = Items[index];
+            Keys.RemoveAt(index);
+            Items.RemoveAt(index);
+            return obj;
         }
 
         public override string Repr()
@@ -114,7 +129,7 @@ namespace cryptscript
             string repr = "{";
             for(int i = 0; i < Length; i++)
             {
-                repr += Keys[i].Repr() + ": " + Items[i].Repr();
+                repr += Keys[i].Repr(true) + ": " + Items[i].Repr(true);
                 if(i + 1 < Length)
                 {
                     repr += ", ";
@@ -124,5 +139,7 @@ namespace cryptscript
             repr += "}";
             return repr;
         }
+
+        public override string Repr(bool showQuotes) => Repr();
     }
 }

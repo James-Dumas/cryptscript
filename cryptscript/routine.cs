@@ -66,5 +66,7 @@ namespace cryptscript
         {
             return "<user-defined routine>";
         }
+
+        public override string Repr(bool showQuotes) => Repr();
     }
 }

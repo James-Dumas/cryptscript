@@ -31,6 +31,8 @@ namespace cryptscript
         {
             return Type.ToString();
         }
+
+        public string Repr(bool showQuotes) => Repr();
     }
 
     public enum ErrorType

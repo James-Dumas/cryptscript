@@ -366,6 +366,8 @@ namespace cryptscript
         {
             return "<built-in routine>";
         }
+
+        public override string Repr(bool showQuotes) => Repr();
     }
 
     public enum BuiltInRoutine
