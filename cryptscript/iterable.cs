@@ -124,6 +124,17 @@ namespace cryptscript
             return obj;
         }
 
+        public List<IObject> GetKeys()
+        {
+            List<IObject> copy = new List<IObject>();
+            foreach(IObject key in Keys)
+            {
+                copy.Add(key);
+            }
+
+            return copy;
+        }
+
         public override string Repr()
         {
             string repr = "{";

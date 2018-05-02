@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Text;
 
 namespace cryptscript
 {
@@ -56,6 +57,13 @@ namespace cryptscript
             Operation = operation;
         }
 
+        public Expression(IObject left, IObject right, OperationType operation)
+        {
+            Left = left;
+            Right = right;
+            Operation = operation;
+        }
+
         #endregion
 
         /// <summary>
@@ -80,14 +88,21 @@ namespace cryptscript
             object result = null;
 
             if((Left is String || Right is String)
-                    && !(new List<OperationType> {OperationType.Addition, OperationType.Equal, OperationType.Inequal, OperationType.NOT,
+                    && !(new List<OperationType> {OperationType.Addition, OperationType.Multiplication, OperationType.Equal, OperationType.Inequal, OperationType.NOT,
                                                   OperationType.AND, OperationType.OR, OperationType.XOR}.Contains(Operation)))
             {
-                return new Error(ErrorType.TypeMismatchError);
+                Interpreter.ThrowError(new Error(ErrorType.TypeMismatchError));
+                return null;
             }
-            else if((Left is Zilch || Right is Zilch)
+            else if((Left is Zilch || Right is Zilch || Left is ICallable || Right is ICallable || Left is IterDict || Right is IterDict)
                     && !(new List<OperationType> {OperationType.Equal, OperationType.Inequal, OperationType.NOT,
                                             OperationType.AND, OperationType.OR, OperationType.XOR}.Contains(Operation)))
+            {
+                Interpreter.ThrowError(new Error(ErrorType.TypeMismatchError));
+                return null;
+            }
+            else if((Left is IterList || Right is IterList)
+                    && new List<OperationType> {OperationType.Less, OperationType.LessEqual, OperationType.Greater, OperationType.GreaterEqual}.Contains(Operation))
             {
                 Interpreter.ThrowError(new Error(ErrorType.TypeMismatchError));
                 return null;
@@ -99,9 +114,9 @@ namespace cryptscript
             switch (Operation)
             {
                 case OperationType.Addition:
-
                     // Check for a type mismatch
-                    if (!(Left is String) && Right is String)
+                    if(!(Left is String) && Right is String || (!(Left is IterList) && Right is IterList
+                    || (Left is IterList && !(Right is IterList || Right is Integer || Right is Decimal || Right is Boolean))))
                     {
                         Interpreter.ThrowError(new Error(ErrorType.TypeMismatchError));
                         return null;
@@ -124,6 +139,22 @@ namespace cryptscript
 
                         result = new IterList(combinedItems);
                     }
+                    else if(Left is IterList)
+                    {
+                        List<IObject> newList = new List<IObject>();
+                        foreach(IObject item in ((IterList) Left).Items)
+                        {
+                            IObject itemResult = new Expression(item, Right, OperationType.Addition).Result();
+                            if(itemResult == null)
+                            {
+                                return null;
+                            }
+
+                            newList.Add(itemResult);
+                        }
+
+                        result = new IterList(newList);
+                    }
                     else
                     {
                         // Return either a concatenated or an added number
@@ -137,29 +168,130 @@ namespace cryptscript
                     break;
 
                 case OperationType.Subraction:
-                    result = returnDecimal
-                        ? ToDouble(Left) - ToDouble(Right)
-                        : ToInt(Left) - ToInt(Right);
+                    // Check for a type mismatch
+                    if(Right is IterList || (Left is IterList && !(Right is Integer || Right is Decimal || Right is Boolean)))
+                    {
+                        Interpreter.ThrowError(new Error(ErrorType.TypeMismatchError));
+                        return null;
+                    }
+
+                    if(Left is IterList)
+                    {
+                        List<IObject> newList = new List<IObject>();
+                        foreach(IObject item in ((IterList) Left).Items)
+                        {
+                            IObject itemResult = new Expression(item, Right, OperationType.Subraction).Result();
+                            if(itemResult == null)
+                            {
+                                return null;
+                            }
+
+                            newList.Add(itemResult);
+                        }
+
+                        result = new IterList(newList);
+                    }
+                    else
+                    {
+                        result = returnDecimal
+                            ? ToDouble(Left) - ToDouble(Right)
+                            : ToInt(Left) - ToInt(Right);
+                    }
+
                     break;
 
                 case OperationType.Multiplication:
-                    result = returnDecimal
-                        ? ToDouble(Left) * ToDouble(Right)
-                        : ToInt(Left) * ToInt(Right);
+                    // Check for a type mismatch
+                    if((Right is String || Right is IterList) || (Left is String && !(Right is Integer || Right is Boolean))
+                    || (Left is IterList && !(Right is Integer || Right is Decimal || Right is Boolean)))
+                    {
+                        Interpreter.ThrowError(new Error(ErrorType.TypeMismatchError));
+                        return null;
+                    }
+
+                    if(Left is String)
+                    {
+                        string initStr = Left.Value.ToString();
+                        StringBuilder newStr = new StringBuilder();
+                        int count = ToInt(Right);
+                        if(count < 0)
+                        {
+                            count *= -1;
+                            char[] arr =  initStr.ToCharArray();
+                            Array.Reverse(arr);
+                            initStr = new string(arr);
+                        }
+
+                        for(int i = 0; i < count; i++)
+                        {
+                            newStr.Append(initStr);
+                        }
+
+                        result = newStr.ToString();
+                    }
+                    else if(Left is IterList)
+                    {
+                        List<IObject> newList = new List<IObject>();
+                        foreach(IObject item in ((IterList) Left).Items)
+                        {
+                            IObject itemResult = new Expression(item, Right, OperationType.Multiplication).Result();
+                            if(itemResult == null)
+                            {
+                                return null;
+                            }
+
+                            newList.Add(itemResult);
+                        }
+
+                        result = new IterList(newList);
+                    }
+                    else
+                    {
+                        result = returnDecimal
+                            ? ToDouble(Left) * ToDouble(Right)
+                            : ToInt(Left) * ToInt(Right);
+                    }
+
                     break;
 
                 case OperationType.Division:
+                    // Check for a type mismatch
+                    if(Right is IterList || (Left is IterList && !(Right is Integer || Right is Decimal || Right is Boolean)))
+                    {
+                        Interpreter.ThrowError(new Error(ErrorType.TypeMismatchError));
+                        return null;
+                    }
+
                     try
                     {
-                        // Only allow integer return type when the numbers divide evenly
-                        if(!returnDecimal && ToInt(Left) % ToInt(Right) != 0)
+                        if(Left is IterList)
                         {
-                            returnDecimal = true;
-                        }
+                            List<IObject> newList = new List<IObject>();
+                            foreach(IObject item in ((IterList) Left).Items)
+                            {
+                                IObject itemResult = new Expression(item, Right, OperationType.Division).Result();
+                                if(itemResult == null)
+                                {
+                                    return null;
+                                }
 
-                        result = returnDecimal
-                            ? ToDouble(Left) / ToDouble(Right)
-                            : ToInt(Left) / ToInt(Right);
+                                newList.Add(itemResult);
+                            }
+
+                            result = new IterList(newList);
+                        }
+                        else
+                        {
+                            // Only allow integer return type when the numbers divide evenly
+                            if(!returnDecimal && ToInt(Left) % ToInt(Right) != 0)
+                            {
+                                returnDecimal = true;
+                            }
+
+                            result = returnDecimal
+                                ? ToDouble(Left) / ToDouble(Right)
+                                : ToInt(Left) / ToInt(Right);
+                        }
                     }
                     catch(System.DivideByZeroException)
                     {
@@ -170,11 +302,37 @@ namespace cryptscript
                     break;
                 
                 case OperationType.Modulo:
+                    // Check for a type mismatch
+                    if(Right is IterList || (Left is IterList && !(Right is Integer || Right is Decimal || Right is Boolean)))
+                    {
+                        Interpreter.ThrowError(new Error(ErrorType.TypeMismatchError));
+                        return null;
+                    }
+
                     try
                     {
-                        result = returnDecimal
-                            ? (ToDouble(Left) % ToDouble(Right) + ToDouble(Right)) % ToDouble(Right)
-                            : (ToInt(Left) % ToInt(Right) + ToInt(Right)) % ToInt(Right);
+                        if(Left is IterList)
+                        {
+                            List<IObject> newList = new List<IObject>();
+                            foreach(IObject item in ((IterList) Left).Items)
+                            {
+                                IObject itemResult = new Expression(item, Right, OperationType.Modulo).Result();
+                                if(itemResult == null)
+                                {
+                                    return null;
+                                }
+
+                                newList.Add(itemResult);
+                            }
+
+                            result = new IterList(newList);
+                        }
+                        else
+                        {
+                            result = returnDecimal
+                                ? (ToDouble(Left) % ToDouble(Right) + ToDouble(Right)) % ToDouble(Right)
+                                : (ToInt(Left) % ToInt(Right) + ToInt(Right)) % ToInt(Right);
+                        }
                     }
                     catch(System.DivideByZeroException)
                     {
@@ -185,11 +343,38 @@ namespace cryptscript
                     break;
 
                 case OperationType.Exponent:
-                    returnDecimal = returnDecimal || ToDouble(Right) < 0;
+                    // Check for a type mismatch
+                    if(Right is IterList || (Left is IterList && !(Right is Integer || Right is Decimal || Right is Boolean)))
+                    {
+                        Interpreter.ThrowError(new Error(ErrorType.TypeMismatchError));
+                        return null;
+                    }
 
-                    result = returnDecimal
-                        ? Math.Pow(ToDouble(Left), ToDouble(Right))
-                        : Math.Pow(ToInt(Left), ToInt(Right));
+                    if(Left is IterList)
+                    {
+                        List<IObject> newList = new List<IObject>();
+                        foreach(IObject item in ((IterList) Left).Items)
+                        {
+                            IObject itemResult = new Expression(item, Right, OperationType.Modulo).Result();
+                            if(itemResult == null)
+                            {
+                                return null;
+                            }
+
+                            newList.Add(itemResult);
+                        }
+
+                        result = new IterList(newList);
+                    }
+                    else
+                    {
+                        returnDecimal = returnDecimal || ToDouble(Right) < 0;
+
+                        result = returnDecimal
+                            ? Math.Pow(ToDouble(Left), ToDouble(Right))
+                            : Math.Pow(ToInt(Left), ToInt(Right));
+                    }
+
                     break;
 
                 case OperationType.AND:
@@ -282,16 +467,56 @@ namespace cryptscript
             {
                 return ToBool(x) == ToBool(y);
             }
-            if(x.GetType() == y.GetType() || x is String || y is String)
+            else if(x is ICallable || y is ICallable)
+            {
+                return x.Equals(y);
+            }
+            else if(x.GetType() == y.GetType() || x is String || y is String)
             {
                 return x.Value.ToString() == y.Value.ToString();
             }
-            if((x is Decimal && y is Integer) || (x is Integer && y is Decimal))
+            else if((x is Decimal && y is Integer) || (x is Integer && y is Decimal))
             {
                 return ToDouble(x) == ToDouble(y);
             } 
+            else if((x is IterList && y is IterList))
+            {
+                IterList a = (IterList) x;
+                IterList b = (IterList) y;
+                if(a.Length != b.Length)
+                {
+                    return false;
+                }
 
-            return false;
+                bool equal = true;
+                for(int i = 0; i < a.Length; i++)
+                {
+                    equal = equal && Equals(a.Get(i), b.Get(i));
+                }
+
+                return equal;
+            } 
+            else if((x is IterDict && y is IterDict))
+            {
+                IterDict a = (IterDict) x;
+                IterDict b = (IterDict) y;
+                if(a.Length != b.Length)
+                {
+                    return false;
+                }
+
+                bool equal = true;
+                foreach(IObject key in a.GetKeys())
+                {
+                    equal = equal && b.HasKey(key) && Equals(a.Get(key), b.Get(key));
+                }
+
+                return equal;
+            }
+            else
+            {
+                return false;
+            }
         }
 
         /// <summary>

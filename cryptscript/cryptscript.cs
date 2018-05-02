@@ -13,7 +13,8 @@ namespace cryptscript
         public static void RunConsoleInterpreter()
         {
             Lexer lexer = new Lexer();
-            Parser parser = new Parser(new IdentifierGroup());
+            IdentifierGroup Ids = new IdentifierGroup();
+            Parser parser = new Parser(Ids);
 
             Console.WriteLine("Type 'exit' to quit.");
 

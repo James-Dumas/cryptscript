@@ -23,7 +23,6 @@ namespace cryptscript
         public Parser(IdentifierGroup ids)
         {
             IDs = ids;
-            BuiltIn.AddBuiltIns(IDs);
         }
 
         public List<Token> PreParse(List<Token> ungroupedTokens)
@@ -203,7 +202,7 @@ namespace cryptscript
                                 if(!(indexedObj is Iterable) || (indexedObj is IterList && !(indexObj is Integer)) 
                                 || (indexedObj is IterDict && !(indexObj is Integer || indexObj is Decimal || indexObj is String || indexObj is Boolean)))
                                 {
-                                    Interpreter.ThrowError(new Error(ErrorType.TypeMismatchError));
+                                    Interpreter.ThrowError(new Error(ErrorType.ValueError));
                                     return null;
                                 }
 
@@ -366,7 +365,7 @@ namespace cryptscript
                             return null;
                         }
 
-                        if(Expression.ToBool(EvaluateExpression(loopCondition).Result()))
+                        if(Expression.ToBool(loopBoolean))
                         {
                             storedCode = ifCode;
                         }
@@ -849,6 +848,12 @@ namespace cryptscript
                             if(key == null)  return null;
                             IObject value = EvaluateExpression(kv.GetRange(colonIndex + 1, kv.Count - colonIndex - 1)).Result();
                             if(value == null)  return null;
+
+                            if(!(key is Integer || key is Decimal || key is String || key is Boolean))
+                            {
+                                Interpreter.ThrowError(new Error(ErrorType.ValueError));
+                                return null;
+                            }
 
                             if(dict.HasKey(key))
                             {

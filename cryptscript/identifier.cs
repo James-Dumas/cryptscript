@@ -11,6 +11,11 @@ namespace cryptscript
     {
         private Dictionary<string, Identifier> IDs { get; set; } = new Dictionary<string, Identifier>();
 
+        public IdentifierGroup()
+        {
+            BuiltIn.AddBuiltIns(this);
+        }
+
         public bool HasID(string name) =>
             IDs.ContainsKey(name);
 
@@ -26,6 +31,7 @@ namespace cryptscript
             {
                 AddID(name);
             }
+
             IDs[name].Reference = reference;
         }
 

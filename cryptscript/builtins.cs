@@ -125,7 +125,7 @@ namespace cryptscript
                     {
                         result = new Error(ErrorType.InvalidArgumentError);
                     }
-                    else if(!double.TryParse((string) args[0].Value, out foo))
+                    else if(!double.TryParse(args[0].Repr(), out foo))
                     {
                         result = new Error(ErrorType.TypeMismatchError);
                     }
@@ -143,7 +143,7 @@ namespace cryptscript
                     }
                     else
                     {
-                        result = new String(args[0].Value);
+                        result = new String(args[0].Repr());
                     }
 
                     break;
@@ -169,32 +169,53 @@ namespace cryptscript
                     {
                         result = new Error(ErrorType.InvalidArgumentError);
                     }
-                    else if(!(args[0] is String && args[1] is Integer && args[2] is Integer))
+                    else if(!((args[0] is String || args[0] is IterList) && args[1] is Integer && args[2] is Integer))
                     {
                         result = new Error(ErrorType.TypeMismatchError);
                     }
                     else 
                     {
-                        string str = (string) args[0].Value;
                         int index1 = (int) args[1].Value;
                         int index2 = (int) args[2].Value;
-                        if(index1 >= str.Length || index1 < str.Length * -1 || index2 >= str.Length + 1 || index2 < str.Length * -1 - 1)
+                        switch(args[0])
                         {
-                            result = new Error(ErrorType.IndexOutOfBoundsError);
-                        }
-                        else
-                        {
-                            // convert negative indices to positive
-                            index1 = index1 < 0 ? str.Length + index1 : index1;
-                            index2 = index2 < 0 ? str.Length + index2 : index2;
-                            if(index2 <= index1)
-                            {
-                                result = new Error(ErrorType.IndexOutOfBoundsError);
-                            }
-                            else
-                            {
-                                result = new String(str.Substring(index1, index2 - index1));
-                            }
+                            case String arg:
+                                string str = (string) arg.Value;
+                                if(index1 >= str.Length || index1 < str.Length * -1 || index2 >= str.Length + 1 || index2 < str.Length * -1 - 1)
+                                {
+                                    result = new Error(ErrorType.IndexOutOfBoundsError);
+                                }
+                                else
+                                {
+                                    // convert negative indices to positive
+                                    index1 = index1 < 0 ? str.Length + index1 : index1;
+                                    index2 = index2 < 0 ? str.Length + index2 : index2;
+                                    if(index2 <= index1)
+                                    {
+                                        result = new Error(ErrorType.IndexOutOfBoundsError);
+                                    }
+                                    else
+                                    {
+                                        result = new String(str.Substring(index1, index2 - index1));
+                                    }
+                                }
+
+                                break;
+                            
+                            case IterList arg:
+                                index1 = arg.RealIndex(index1);
+                                index2 = arg.RealIndex(index2);
+
+                                if(index1 < 0 || index1 >= arg.Length || index2 < 0 || index2 >= arg.Length || index2 < index1)
+                                {
+                                    result = new Error(ErrorType.IndexOutOfBoundsError);
+                                }
+                                else
+                                {
+                                    result = new IterList(arg.Items.GetRange(index1, index2 - index1));
+                                }
+
+                                break;
                         }
                     }
 
@@ -294,7 +315,75 @@ namespace cryptscript
                         result = new Error(ErrorType.TypeMismatchError);
                     }
 
-                    break;                    
+                    break;
+                
+                case BuiltInRoutine.Keys:
+                    if(args.Count != 1)
+                    {
+                        result = new Error(ErrorType.InvalidArgumentError);
+                    }
+                    else if(!(args[0] is IterDict))
+                    {
+                        result = new Error(ErrorType.TypeMismatchError);
+                    }
+                    else
+                    {
+                        result = new IterList(((IterDict) args[0]).GetKeys());
+                    }
+
+                    break;
+                
+                case BuiltInRoutine.Items:
+                    if(args.Count != 1)
+                    {
+                        result = new Error(ErrorType.InvalidArgumentError);
+                    }
+                    else if(!(args[0] is IterDict))
+                    {
+                        result = new Error(ErrorType.TypeMismatchError);
+                    }
+                    else
+                    {
+                        result = new IterList(((IterDict) args[0]).Items);
+                    }
+
+                    break;
+
+                case BuiltInRoutine.Char:
+                    if(args.Count != 1)
+                    {
+                        result = new Error(ErrorType.InvalidArgumentError);
+                    }
+                    else if(!(args[0] is Integer))
+                    {
+                        result = new Error(ErrorType.TypeMismatchError);
+                    }
+                    else
+                    {
+                        result = new String(Convert.ToChar((int) args[0].Value));
+                    }
+
+                    break;
+                
+                case BuiltInRoutine.Ord:
+                    if(args.Count != 1)
+                    {
+                        result = new Error(ErrorType.InvalidArgumentError);
+                    }
+                    else if(((string) args[0].Value).Length != 1)
+                    {
+                        result = new Error(ErrorType.ValueError);
+                    }
+                    else if(!(args[0] is String))
+                    {
+                        result = new Error(ErrorType.TypeMismatchError);
+                    }
+                    else
+                    {
+                        result = new Integer(Convert.ToInt32(Convert.ToChar((string) args[0].Value)));
+                    }
+                    
+                    break;
                 
                 case BuiltInRoutine.Type:
                     if(args.Count != 1)
@@ -384,6 +473,10 @@ namespace cryptscript
         Insert,
         Pop,
         Length,
+        Keys,
+        Items,
+        Char,
+        Ord,
         Type,
         Exit,
     }

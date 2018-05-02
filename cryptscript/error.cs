@@ -45,6 +45,7 @@ namespace cryptscript
         IndexOutOfBoundsError,
         IdNotFoundError,
         KeyError,
+        ValueError,
         FileError,
         KeyboardInterrupt,
     }

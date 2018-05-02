@@ -6,16 +6,16 @@ pointer = 0
 loops = []
 
 through i, length(code) do      ~ iterate through the length of the code
-    char = code[i]              ~ get the character at the current index
+    chr = code[i]              ~ get the chracter at the current index
     
-    given that char == ">" do
+    given that chr == ">" do
         pointer = pointer + 1                       ~ move pointer right
         given that length(tape) <= pointer do
             tape = tape + [0]                       ~ increase tape size if necessary (from the right)
         concur
     concur
 
-    given that char == "<" do
+    given that chr == "<" do
         pointer = pointer - 1           ~ move pointer left
         given that pointer < 0 do
             pointer = 0
@@ -23,19 +23,19 @@ through i, length(code) do      ~ iterate through the length of the code
         concur
     concur
 
-    given that char == "+" do
+    given that chr == "+" do
         tape[pointer] = (tape[pointer] + 1) % 256       ~ increment the value under the pointer, overflowing to 0 at 256
     concur
 
-    given that char == "-" do
+    given that chr == "-" do
         tape[pointer] = (tape[pointer] - 1) % 256       ~ decrement the value under the pointer, underflowing to 255 at -1
     concur
 
-    given that char == "[" do
+    given that chr == "[" do
         loops = loops + [i]         ~ store this index as the start of a loop
     concur
 
-    given that char == "]" do
+    given that chr == "]" do
         given that tape[pointer] == 0 and length(loops) > 0 do
             pop(loops, -1)      ~ exit the loop if the value under the pointer is 0
         otherwise
@@ -43,19 +43,18 @@ through i, length(code) do      ~ iterate through the length of the code
         concur
     concur
 
-    given that char == "." do
-        write(tape[pointer], true)      ~ print the number under the pointer
+    given that chr == "." do
+        write(char(tape[pointer]), true)      ~ print the chracter of the number under the pointer
     concur
 
-    given that char == "," do
-        input = number(read())      ~ take a number as input
-        as long as input < 0 do
-            input = input + 256
+    given that chr == "," do
+        input = Zilch
+        as long as not input do
+            input = read()          ~ take a chracter as input
         concur
 
-        input = input % 256
-
-        tape[pointer] = input       ~ store the number at the location under the pointer
+        input = ord(input[0]) % 256     ~ convert chracter to number
+        tape[pointer] = input           ~ store the number at the location under the pointer
     concur
 concur
 
