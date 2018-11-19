@@ -37,3 +37,14 @@ C:\Users\Owner\Documents\GitHub\cryptscript\script-coin\Control\bin\Debug\netcor
 C:\Users\Owner\Documents\GitHub\cryptscript\script-coin\Control\bin\Debug\netcoreapp2.0\Control.runtimeconfig.dev.json
 C:\Users\Owner\Documents\GitHub\cryptscript\script-coin\Control\bin\Debug\netcoreapp2.0\Control.dll
 C:\Users\Owner\Documents\GitHub\cryptscript\script-coin\Control\bin\Debug\netcoreapp2.0\Control.pdb
+D:\dev\cryptscript\script-coin\control\bin\Debug\netcoreapp2.0\Control.deps.json
+D:\dev\cryptscript\script-coin\control\bin\Debug\netcoreapp2.0\Control.runtimeconfig.json
+D:\dev\cryptscript\script-coin\control\bin\Debug\netcoreapp2.0\Control.runtimeconfig.dev.json
+D:\dev\cryptscript\script-coin\control\bin\Debug\netcoreapp2.0\Control.dll
+D:\dev\cryptscript\script-coin\control\bin\Debug\netcoreapp2.0\Control.pdb
+D:\dev\cryptscript\script-coin\control\obj\Debug\netcoreapp2.0\Control.csprojAssemblyReference.cache
+D:\dev\cryptscript\script-coin\control\obj\Debug\netcoreapp2.0\Control.csproj.CoreCompileInputs.cache
+D:\dev\cryptscript\script-coin\control\obj\Debug\netcoreapp2.0\Control.AssemblyInfoInputs.cache
+D:\dev\cryptscript\script-coin\control\obj\Debug\netcoreapp2.0\Control.AssemblyInfo.cs
+D:\dev\cryptscript\script-coin\control\obj\Debug\netcoreapp2.0\Control.dll
+D:\dev\cryptscript\script-coin\control\obj\Debug\netcoreapp2.0\Control.pdb
